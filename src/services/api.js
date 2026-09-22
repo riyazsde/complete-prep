@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const baseURL = process.env.REACT_APP_BASE_URL || "baseUrl_is_not_set";
+const baseURL = process.env.REACT_APP_BASE_URL || "https://prep-project-zej8.onrender.com/api/v1/";
 
 const api = axios.create({
   baseURL,
