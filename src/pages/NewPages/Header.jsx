@@ -17,7 +17,8 @@ const Header = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalJoinVisible, setModalJoinVisible] = useState(false);
-  const { user, setUser } = useContext(AuthContext);
+  // ✅ CHANGE 1: added isAuthenticated
+  const { user, setUser, isAuthenticated } = useContext(AuthContext);
   const [nextPage, setNextPage] = useState('');
   const [goalCategory, setGoalCategory] = useState([]);
   const [goal, setGoal] = useState([]);
@@ -162,13 +163,26 @@ const Header = () => {
   const handleGoalClick = item => {
     const id = item?._id;
     setSelectedGoal(id);
-     sessionStorage.setItem('courseId', id);
+    sessionStorage.setItem('courseId', id);
 
     setNextPage(`/semester-exam/${selectedGoalCategory}/${id}`);
     if (!goalSemesters[id]) {
       fetchSemestersForGoal(id);
     }
-    // setModalVisible(true);
+  };
+
+  // ✅ CHANGE 2: new helper to handle semester click with auth check
+  const handleSemesterClick = semesterId => {
+    setSelectedSemester(semesterId);
+    sessionStorage.setItem('semesterId', semesterId);
+
+    if (!isAuthenticated) {
+      setStep('login');
+      setModalVisible(true);
+      return;
+    }
+
+    setModalVisible(true);
   };
 
   useEffect(() => {
@@ -248,23 +262,19 @@ const Header = () => {
   const handleChange = e => {
     const { name, value } = e.target;
     setForm({ ...form, [name]: value });
-    // Validate field on change
     const newErrors = validateField(name, value);
     setErrors(newErrors);
   };
 
-  // Validate all fields
   const validate = () => {
     const err = {};
 
-    // Validate each field
     err.name = validateField('name', form.name).name;
     err.university = validateField('university', form.university).university;
     err.courses = validateField('courses', form.courses).courses;
     err.email = validateField('email', form.email).email;
     err.phone = validateField('phone', form.phone).phone;
 
-    // Remove undefined errors
     Object.keys(err).forEach(key => !err[key] && delete err[key]);
 
     return err;
@@ -315,17 +325,20 @@ const Header = () => {
       setLoading(false);
     }
   };
-const handleDirect = (semesterId) => {
-  console.log({selectedGoal,selectedGoalCategory,selectedSemester})
-    // if (!subscriptionStatus) {
-    //   setModalVisible(true);
-    //   return;
-    // }
+
+  // ✅ CHANGE 3: fixed field swap + auth check + removed console.log
+  const handleDirect = semesterId => {
+    if (!isAuthenticated) {
+      setStep('login');
+      setModalVisible(true);
+      return;
+    }
+
     userApi.profile.update({
       data: {
-        goalCategory: selectedGoal,
-        goal: selectedGoalCategory,
-        semester: semesterId??selectedSemester,
+        goalCategory: selectedGoalCategory,
+        goal: selectedGoal,
+        semester: semesterId ?? selectedSemester,
         firstHearAboutUs: true,
       },
       onSuccess: () => {
@@ -344,7 +357,9 @@ const handleDirect = (semesterId) => {
       },
     });
   };
-const [step,setStep]=useState("login")
+
+  const [step, setStep] = useState('login');
+
   return (
     <>
       <ReusableModal
@@ -355,7 +370,6 @@ const [step,setStep]=useState("login")
             closeModal={() => setModalVisible(false)}
             setUser={setUser}
             seletedStep={step}
-
           />
         }
         show={modalVisible}
@@ -501,16 +515,10 @@ const [step,setStep]=useState("login")
                                     </span>
                                   ) : (goalSemesters[item?._id] || []).length > 0 ? (
                                     (goalSemesters[item?._id] || []).map((semester, idx) => (
+                                      // ✅ CHANGE 4: use handleSemesterClick
                                       <span
                                         key={idx}
-                                        onClick={() => {
-                                          setSelectedSemester(semester?._id);
-
-                                          sessionStorage.setItem('semesterId', semester?._id);
-
-                                          setModalVisible(true);
-                                          
-                                        }}
+                                        onClick={() => handleSemesterClick(semester?._id)}
                                         className={`px-3 py-1 text-sm cursor-pointer rounded-3xl ${
                                           selectedSemester === semester?._id
                                             ? 'bg-black text-white'
@@ -544,25 +552,12 @@ const [step,setStep]=useState("login")
             </div>
 
             <div className="flex gap-2">
-               <button
+              <button
                 onClick={() => setModalJoinVisible(true)}
                 className="px-3 py-2 font-bold text-black bg-transparent border border-black rounded-lg hover:!bg-[#3DD455] hover:text-white"
               >
                 Join Waitlist
               </button>
-              {/* <button
-                onClick={() => {setStep((prev)=>"register");setModalVisible(true)}}
-                className="px-3 py-2 font-bold text-black bg-transparent border border-black hover:!border-[#3DD455] rounded-lg hover:!bg-[#3DD455] hover:!text-white"
-              >
-                Register
-              </button>
-
-              <button
-                onClick={() => {setStep((prev)=>"login");setModalVisible(true)}}
-                className="px-3 py-2 font-bold bg-[#3DD455] hover:bg-black text-white rounded-lg"
-              >
-                Login
-              </button> */}
             </div>
           </div>
         </div>
@@ -678,11 +673,12 @@ const [step,setStep]=useState("login")
                                     </span>
                                   ) : (goalSemesters[item?._id] || []).length > 0 ? (
                                     (goalSemesters[item?._id] || []).map((semester, idx) => (
+                                      // ✅ CHANGE 5: use handleSemesterClick + close sidebar
                                       <span
                                         key={idx}
                                         onClick={() => {
-                                          setSelectedSemester(semester?._id);
-                                          setModalVisible(true);
+                                          handleSemesterClick(semester?._id);
+                                          setIsSidebarOpen(false);
                                         }}
                                         className={`px-3 py-1 text-sm cursor-pointer rounded-3xl ${
                                           selectedSemester === semester?._id
@@ -725,28 +721,6 @@ const [step,setStep]=useState("login")
                 >
                   Join Waitlist
                 </button>
-
-                {/* <button
-                  onClick={() => {
-                    setModalVisible(true);
-                    setIsSidebarOpen(false);
-                    setStep((prev)=>"register");
-                  }}
-                  className="px-4 py-2 border border-black rounded-lg"
-                >
-                  Register
-                </button>
-
-                <button
-                  onClick={() => {
-                    setModalVisible(true);
-                    setIsSidebarOpen(false);
-                    setStep((prev)=>"login");
-                  }}
-                  className="px-4 py-2 bg-[#3DD455] rounded-lg"
-                >
-                  Login
-                </button> */}
               </div>
             </div>
           </div>
