@@ -20,18 +20,18 @@ api.interceptors.request.use(
   },
   (error) => Promise.reject(error)
 );
-
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (!error.response) {
-      return Promise.reject({
-        message: "Network error. Please try again later.",
-      });
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("authToken");
+    console.log("[api] request →", config.url, "| token:", token ? "present" : "MISSING");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
-
-    return Promise.reject(error);
-  }
+    return config;
+  },
+  (error) => Promise.reject(error)
 );
+
+
 
 export default api;

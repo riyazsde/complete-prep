@@ -44,6 +44,7 @@ const Header = () => {
   const [goalError, setGoalError] = useState('');
   const [mainUniversitiesLoading, setMainUniversitiesLoading] = useState(false);
   const [selectedSemester, setSelectedSemester] = useState('');
+  const [step, setStep] = useState('login');
   const isActive = path => location.pathname === path;
 
   const resetForm = () => {
@@ -140,6 +141,14 @@ const Header = () => {
 
   const fetchSemestersForGoal = async goalId => {
     if (!selectedGoalCategory || !goalId) return;
+
+    // ✅ FIX #1: Don't call protected API when not logged in
+    if (!user) {
+      setModalVisible(true);
+      setStep('login');
+      return;
+    }
+
     setSemesterLoading(true);
     setSemesterError('');
     await userApi.semesterExam.getAll({
@@ -162,9 +171,17 @@ const Header = () => {
   const handleGoalClick = item => {
     const id = item?._id;
     setSelectedGoal(id);
-     sessionStorage.setItem('courseId', id);
+    sessionStorage.setItem('courseId', id);
 
     setNextPage(`/semester-exam/${selectedGoalCategory}/${id}`);
+
+    // ✅ FIX #2: Open login modal instead of hitting protected API when logged out
+    if (!user) {
+      setModalVisible(true);
+      setStep('login');
+      return;
+    }
+
     if (!goalSemesters[id]) {
       fetchSemestersForGoal(id);
     }
@@ -315,17 +332,19 @@ const Header = () => {
       setLoading(false);
     }
   };
-const handleDirect = (semesterId) => {
-  console.log({selectedGoal,selectedGoalCategory,selectedSemester})
+
+  const handleDirect = semesterId => {
+    console.log({ selectedGoal, selectedGoalCategory, selectedSemester });
     // if (!subscriptionStatus) {
     //   setModalVisible(true);
     //   return;
     // }
     userApi.profile.update({
       data: {
-        goalCategory: selectedGoal,
-        goal: selectedGoalCategory,
-        semester: semesterId??selectedSemester,
+        // ✅ FIX #4: swapped — goalCategory should be selectedGoalCategory, goal should be selectedGoal
+        goalCategory: selectedGoalCategory,
+        goal: selectedGoal,
+        semester: semesterId ?? selectedSemester,
         firstHearAboutUs: true,
       },
       onSuccess: () => {
@@ -344,7 +363,7 @@ const handleDirect = (semesterId) => {
       },
     });
   };
-const [step,setStep]=useState("login")
+
   return (
     <>
       <ReusableModal
@@ -355,7 +374,6 @@ const [step,setStep]=useState("login")
             closeModal={() => setModalVisible(false)}
             setUser={setUser}
             seletedStep={step}
-
           />
         }
         show={modalVisible}
@@ -505,11 +523,8 @@ const [step,setStep]=useState("login")
                                         key={idx}
                                         onClick={() => {
                                           setSelectedSemester(semester?._id);
-
                                           sessionStorage.setItem('semesterId', semester?._id);
-
                                           setModalVisible(true);
-                                          
                                         }}
                                         className={`px-3 py-1 text-sm cursor-pointer rounded-3xl ${
                                           selectedSemester === semester?._id
@@ -544,7 +559,7 @@ const [step,setStep]=useState("login")
             </div>
 
             <div className="flex gap-2">
-               <button
+              <button
                 onClick={() => setModalJoinVisible(true)}
                 className="px-3 py-2 font-bold text-black bg-transparent border border-black rounded-lg hover:!bg-[#3DD455] hover:text-white"
               >
@@ -682,6 +697,7 @@ const [step,setStep]=useState("login")
                                         key={idx}
                                         onClick={() => {
                                           setSelectedSemester(semester?._id);
+                                          sessionStorage.setItem('semesterId', semester?._id);
                                           setModalVisible(true);
                                         }}
                                         className={`px-3 py-1 text-sm cursor-pointer rounded-3xl ${
@@ -783,7 +799,9 @@ const [step,setStep]=useState("login")
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">University</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    University
+                  </label>
                   <input
                     type="text"
                     name="university"
