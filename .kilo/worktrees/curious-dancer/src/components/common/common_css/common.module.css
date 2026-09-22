@@ -1,0 +1,1544 @@
+.homepageCard1 {
+  border-radius: 10px;
+
+  background-color: white;
+}
+.homepageCard1Image {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.homepageCard1Name {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-left: 2rem;
+}
+
+.homepageCard1imag {
+  padding: 0.5rem;
+  background-color: #b3def7;
+  width: 60px;
+  height: 60px;
+  border-radius: 10px;
+}
+.homepageCard1imageMain {
+  width: 100%;
+  height: 100%;
+}
+.homepageCard1Description {
+  display: flex;
+  flex-direction: column;
+}
+.homepageCard1description1 {
+  width: 90%;
+  margin: auto;
+  font-weight: 500;
+  margin-top: 1rem;
+  color: #3e3e45;
+  font-size: 0.9rem;
+}
+
+.homepageCard1explore {
+  width: 90%;
+  margin: auto;
+  font-weight: normal;
+  margin-top: 1rem;
+  padding-bottom: 1rem;
+  color: #2a2bfa;
+  cursor: pointer;
+}
+.buttonLoaderContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: right;
+  height: 100%;
+  width: 100%;
+}
+
+.homepageCard2AI {
+  border-radius: 10px;
+  background-color: white;
+  padding: 1rem;
+  text-align: center;
+  border: 1px solid #b3def7;
+  width: 100%;
+}
+
+.homepageCard2AIIcon {
+  max-width: 100px;
+  max-height: 100px;
+  width: 100%;
+  margin: auto;
+}
+.homepageCard2AIIconImage {
+  width: 100%;
+  height: 100%;
+  max-width: 50px;
+  max-height: 50px;
+}
+.homepageCard2AIName {
+  font-size: 1rem;
+  font-weight: bold;
+  margin-top: 1rem;
+  color: #3e3e45;
+  @media screen and (max-width: 768px) {
+    font-size: 1rem;
+  }
+}
+
+.homepageCard3Course {
+  background-color: #dcf2ff;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2rem;
+  text-align: center;
+  cursor: pointer;
+  min-height: 200px;
+  @media screen and (max-width: 768px) {
+    padding: 0.5rem;
+    min-height: 250px;
+  }
+}
+
+.homepageCard3CourseIcon > img {
+  max-width: 55px;
+  max-height: 55px;
+  width: auto;
+  height: auto;
+}
+
+.homepageCard3CourseName {
+  font-size: 1.3rem;
+  font-weight: bold;
+  margin-top: 1rem;
+  color: #000;
+  @media screen and (max-width: 768px) {
+    font-size: 1rem;
+  }
+}
+
+.homepageCard3CourseDiscription {
+  font-size: 0.9rem;
+  font-weight: normal;
+  margin-top: 1rem;
+  color: #000;
+  flex-grow: 1;
+  @media screen and (max-width: 768px) {
+    font-size: 0.8rem;
+  }
+}
+
+.homepageCard3CourseDiscription2 {
+  font-size: 0.9rem;
+  font-weight: normal;
+  color: #2a2bfa;
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  @media screen and (max-width: 768px) {
+    font-size: 0.8rem;
+  }
+}
+
+.homepageCard4Community {
+  border: 1px solid #b3def7;
+  border-radius: 10px;
+  padding: 2rem 2rem;
+
+  @media screen and (max-width: 768px) {
+    padding: 1rem 1rem;
+  }
+}
+
+.homepageCard4CommunityIconImage {
+  width: 100%;
+  height: 100%;
+  max-width: 60px;
+  max-height: 60px;
+  @media screen and (max-width: 768px) {
+    max-width: 50px;
+    max-height: 50px;
+  }
+}
+
+.homepageCard4CommunityName {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-top: 1rem;
+  color: #3e3e45;
+  @media screen and (max-width: 768px) {
+    font-size: 1rem;
+  }
+}
+
+.homepageCard4CommunityDiscription {
+  font-size: 0.9rem;
+  font-weight: normal;
+  margin-top: 1rem;
+  color: #3e3e45;
+  @media screen and (max-width: 768px) {
+    font-size: 0.8rem;
+  }
+}
+
+.homepageCard5Capsule {
+  padding-top: 1rem;
+  color: white;
+  cursor: pointer;
+}
+
+.homepageCard21 {
+  background-color: white;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: center;
+  margin: 1rem 0;
+  cursor: pointer;
+  @media screen and (max-width: 768px) {
+    font-size: 0.8rem;
+  }
+}
+
+.homepageCard21.active {
+  color: #2a2bfa;
+}
+
+.swiperSlideGoalPage {
+  padding: 1rem 2rem;
+  font-weight: 600;
+}
+
+.selectedSlideGoalPage {
+  background-color: #6090f7;
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  color: #3e3e45;
+  cursor: pointer;
+}
+.unselectedSlideGoalPage {
+  background-color: #e2e2e2;
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  color: #3e3e45;
+  cursor: pointer;
+}
+
+.userBannerTopImageDashboard {
+  width: 100%;
+}
+
+.userMenuBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 1rem 0rem;
+  cursor: pointer;
+
+  @media screen and (max-width: 768px) {
+    padding: 1rem;
+    justify-content: center;
+  }
+}
+.menubarName {
+  font-size: 1.1rem;
+  font-weight: 700;
+  padding-top: 1rem;
+  @media screen and (max-width: 768px) {
+    font-size: 1rem;
+  }
+}
+
+.menubarDashboardName {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background-color: #b3def7;
+  padding: 0.6rem;
+  border-radius: 10px;
+  color: #000;
+  font-weight: 600;
+  margin-top: 1rem;
+}
+
+.menubarDashboardNameIcon {
+  padding: 0.15rem 0.4rem;
+  border-radius: 10px;
+  background-color: #8bacc9;
+}
+
+.menubarDashboardNameIcon Icon {
+  width: 50px;
+  height: 50px;
+  color: white;
+  @media screen and (max-width: 768px) {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+.menubarIcons {
+  display: flex;
+  gap: 1rem;
+  padding-right: 1rem;
+}
+
+.menubarIcons > img {
+  width: 50px;
+  height: 50px;
+  padding: 0.8rem;
+  border-radius: 50%;
+  background-color: #b3def7;
+  cursor: pointer;
+
+  @media screen and (max-width: 768px) {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+.dashboardUserHomeCourseCard {
+  display: flex;
+  align-items: center;
+  background-color: white;
+  border: 1px solid #d9d9d9;
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  cursor: pointer;
+
+  @media screen and (max-width: 568px) {
+    /* flex-direction: column;
+    justify-content: center;
+    gap: 0.5rem; */
+    width: 80%;
+    margin: auto;
+  }
+}
+
+.dashboardUserHomeCourseCard > span:nth-child(2) {
+  &:hover {
+    color: #0066ff;
+  }
+}
+.dashboardUserHomeCoursesCard {
+  padding: 1rem;
+  background-color: white;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  /* max-width: 300px; */
+  width: 100%;
+}
+.dashboardUserHomeCoursesCardImage img {
+  width: 100%;
+  height: 100%;
+}
+
+.dashboardUserHomeCoursesCardName {
+  font-size: 1rem;
+  font-weight: bold;
+  margin: 0.5rem 0;
+}
+
+.dashboardUserHomeCoursesCardTime {
+  color: #a3a3a3;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dashboardUserHomeCoursesCardTime > span:last-child {
+  font-size: 0.8rem;
+}
+
+.dashboardUserHomeRewardCard {
+  border-radius: 10px;
+  background-color: #b3def7;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-width: 400px;
+  @media screen and (max-width: 568px) {
+    min-width: 300px;
+  }
+}
+
+.dashboardUserHomeRewardCardImage {
+  padding: 1rem;
+  background-color: white;
+  border-radius: 10px;
+  height: 100%;
+}
+.dashboardUserHomeRewardCardImage img {
+  max-width: 50px;
+  max-height: 50px;
+  width: auto;
+  height: auto;
+  @media screen and (max-width: 568px) {
+    max-width: 40px;
+    max-height: 40px;
+  }
+}
+.dashboardUserHomeRewardCardText {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-right: 0.5rem;
+}
+.dashboardUserHomeRewardCardText1_1 {
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboardUserHomeRewardCardText1 {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #000;
+  @media screen and (max-width: 568px) {
+    font-size: 0.8rem;
+  }
+}
+
+.dashboardUserHomeRewardCardText2 {
+  font-size: 0.8rem;
+  @media screen and (max-width: 568px) {
+    font-size: 0.6rem;
+  }
+}
+
+.dashboardUserHomeTopContentCard {
+  background-color: #e8e8e8;
+  padding: 1rem;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 2rem;
+}
+
+.dashboardUserHomeTopContentCardImage img {
+  max-width: 1100px;
+  max-height: 110px;
+  width: auto;
+  height: auto;
+  @media screen and (max-width: 568px) {
+    max-width: 50px;
+    max-height: 50px;
+  }
+}
+.dashboardUserHomeTopContentCardText {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1.2rem;
+  font-weight: 600;
+  @media screen and (max-width: 568px) {
+    font-size: 0.8rem;
+  }
+}
+.dashboardUserHomeTopContentCardText1 {
+  padding-right: 1rem;
+}
+
+.dashboardUserCourseCard {
+  background-color: #b0dff7;
+  padding: 1rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  border-radius: 10px;
+  text-align: center;
+  min-height: 300px;
+  justify-content: space-between;
+}
+
+.dashboardUserCourseCardImage {
+  padding: 1rem;
+}
+
+.dashboardUserCourseCardImage img {
+  max-width: 110px;
+  max-height: 110px;
+  width: auto;
+  height: auto;
+}
+
+@media screen and (max-width: 568px) {
+  .dashboardUserCourseCardImage img {
+    max-width: 50px;
+    max-height: 50px;
+  }
+}
+
+.dashboardUserCourseCardName {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+@media screen and (max-width: 568px) {
+  .dashboardUserCourseCardName {
+    font-size: 0.8rem;
+  }
+}
+
+.dashboardUserCourseCardDescription {
+  font-size: 0.8rem;
+  color: #838080;
+  word-wrap: break-word;
+}
+
+.dashboardUserCourseCardButton {
+  margin-top: auto;
+  display: flex;
+  justify-content: center;
+}
+
+.dashboardUserCourseCardButton > button {
+  margin-top: 3rem;
+  background-color: white !important;
+  border: 1px solid #2a2bfa;
+  width: 60% !important;
+  color: #2a2bfa !important;
+  font-weight: bold;
+  &:hover {
+    background-color: #2a2bfa !important;
+    color: white !important;
+  }
+}
+
+.menubarIconWrapper img {
+  padding: 0.5rem;
+  border-radius: 50%;
+  border: 1px solid #b3def7;
+
+  &:hover {
+    background-color: #b3def7;
+  }
+}
+
+.menubarIcon {
+  max-width: 50px;
+  max-height: 50px;
+  width: auto;
+  height: auto;
+}
+.MySuccessRoadMapDiv21Popover {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+}
+
+.MySuccessRoadMapDiv2Popover {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+}
+
+.MySuccessRoadMapDiv2Popover > span {
+  cursor: pointer;
+  &:hover {
+    color: #b3def7;
+  }
+}
+
+.testWithVideoCard {
+  background-color: #b3def7;
+  border-radius: 10px;
+  min-height: 300px;
+  box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+  @media screen and (max-width: 568px) {
+    width: 100%;
+  }
+}
+.testWithVideoCard12 {
+  background-color: white;
+  border-radius: 10px;
+
+  box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+}
+.testWithVideoCardImage {
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+}
+
+.testWithVideoCardImageIconImage {
+  max-width: 90px;
+  max-height: 90px;
+  border-radius: 50%;
+  width: auto;
+  height: auto;
+  @media screen and (max-width: 568px) {
+    max-width: 50px;
+    max-height: 50px;
+  }
+}
+
+.testWithVideoCardImageText1 {
+  background-color: #f1f0f0;
+  border-radius: 10px;
+  padding: 0.5rem 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.testWithVideoCardIcon {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+.testWithVideoCardImageText2 {
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+.testWithVideoCardText {
+  padding: 1rem;
+  font-weight: bold;
+  font-size: 1rem;
+}
+.testWithVideoCardText1 {
+  padding-left: 1rem;
+  font-weight: bold;
+  font-size: 1rem;
+}
+.testWithVideoCardDescription {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0 1rem;
+}
+
+.testWithVideoCardDescription > span:nth-child(odd) {
+  padding: 0.2rem 0.5rem !important;
+  background-color: #f1f0f0 !important;
+  border-radius: 10px;
+  font-size: 1rem;
+}
+
+.testWithVideoCardDescription > span:nth-child(even) {
+  padding: 0.2rem 0.5rem !important;
+  background-color: #dcf2ff !important;
+  border-radius: 10px;
+  font-size: 1rem;
+}
+.testWithVideoCardPoints {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0 1rem;
+}
+.testWithVideoCardPoints > span {
+  padding: 0.5rem 0.8rem !important;
+  background-color: #f1f0f0 !important;
+  border-radius: 10px;
+  font-size: 1rem;
+}
+
+.testWithVideoCardPointsList {
+  padding: 0 1rem;
+  color: #a3a3a3;
+  font-size: 0.8rem;
+}
+
+.testWithVideoCardButton {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+  margin-top: auto;
+}
+.testWithVideoCardButton > button {
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  border: none;
+  background-color: #6090f7;
+  font-size: 1rem;
+  font-weight: normal;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+  width: 80%;
+  margin: auto;
+}
+.testWithVideoCardButton > button:hover {
+  background-color: #2a2bfa;
+  color: white;
+}
+
+.handWrittenNotesUserCard {
+  background-color: #b3def7;
+  padding: 1rem;
+  border-radius: 10px;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+.handWrittenNotesUserCardImage {
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.handWrittenNotesUserCardImage > img {
+  width: 100%;
+  height: 250px;
+  border-radius: 10px;
+  object-fit: cover;
+  max-height: 300px;
+}
+
+.handWrittenNotesTitle {
+  font-size: 1rem;
+  font-weight: bold;
+  margin: 0.5rem 0;
+  color: #000;
+  line-height: normal;
+}
+
+.handWrittenNotesName {
+  font-size: 1rem;
+  font-weight: bold;
+  margin: 0.5rem 0;
+  color: #2a2bfa;
+}
+
+.handWrittenNotesPages {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  color: #a3a3a3;
+}
+.handWrittenNotesPages1 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: #a3a3a3;
+}
+
+.handWrittenNotesSubtopics {
+  font-size: 1rem;
+  color: #a3a3a3;
+}
+
+.handWrittenNotesRating {
+  margin: 1rem 0;
+}
+.handWrittenNotesRating11 {
+  margin: 0rem 0;
+}
+.handWrittenNotesRating {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.handWrittenNotesRatingStar {
+  color: #a3a3a3;
+  font-size: 1rem;
+}
+
+.handWrittenNotesRatingStarIcon {
+  width: 15px !important;
+  height: 15px !important;
+}
+
+.handWrittenNotesRatingButton > Button {
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  border: none;
+  background-color: #6090f7;
+  font-size: 1rem;
+  font-weight: normal;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+}
+
+.pyqsNotesUserCardMainTitle {
+  font-size: 1rem;
+  font-weight: bold;
+  padding-left: 2rem;
+}
+
+.pyqsNotesUserCardContainer1 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 2rem;
+  background-color: white;
+  border-radius: 10px;
+  /* border: 1px solid #CCCCCC; */
+  box-shadow: rgba(0, 0, 0, 0.15) 0px 2px 8px;
+}
+
+.pyqsNotesUserCardContainer1_1 {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pyqsNotesUserCardContainer1Span1 {
+  font-size: 0.8rem;
+  font-weight: bold;
+  background-color: #7de079;
+  color: white;
+
+  border-radius: 10px;
+  padding: 0.8rem 1rem;
+  text-align: center;
+  max-width: 100px;
+  margin-bottom: 1rem;
+}
+
+.pyqsNotesUserCardContainer1Span2 {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #000;
+}
+
+.pyqsNotesUserCardContainer1Span3 {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.8rem;
+  font-weight: normal;
+  flex-wrap: wrap;
+  color: #000;
+}
+.pyqsNotesUserCardContainer1Span3 > span {
+  background-color: #e2e2e2;
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+}
+.pyqsNotesUserCardContainer1Span3Span123 {
+  background-color: #e2e2e2;
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  width: fit-content;
+}
+.pyqsNotesUserCardContainer2 > Button {
+  background-color: #2a2bfa !important;
+  padding: 0.5rem 2rem;
+  &:hover {
+    background-color: #3e3e45 !important;
+    border: none !important;
+  }
+}
+
+.communityNotesUserCard {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.communityNotesUserCardImage {
+  display: flex;
+  flex-direction: column;
+  background-color: white;
+  padding: 1rem;
+  border-radius: 10px;
+  gap: 1.5rem;
+}
+.communityNotesUserCardImageSpan {
+  display: flex;
+  gap: 1rem;
+}
+.communityNotesUserCardImageSpan1 > img {
+  max-width: 70px;
+  max-height: 70px;
+  width: auto;
+  height: auto;
+}
+
+.communityNotesUserCardImageSpan2 {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-bottom: 1rem;
+}
+
+.communityNotesUserCardImageSpan2Span1 {
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+.communityNotesUserCardImageSpan2Span2 {
+  font-size: 0.8rem;
+  font-weight: normal;
+  color: #a3a3a3;
+}
+
+.communityNotesUserCardImageSpan3 {
+  font-weight: bold;
+  font-size: 0.8rem;
+  color: #747481;
+  margin-bottom: 0.5rem;
+}
+
+.communityNotesUserCardFooter {
+  margin: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+}
+
+.communityNotesUserCardFooterSpan {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+}
+.communityNotesUserCardFooterSpan1Icon {
+  width: 20px !important;
+  height: 20px !important;
+  cursor: pointer;
+}
+
+.communityNotesUserCardFooterSpan1 {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+}
+
+.dashboardUserCoursesTypeCard {
+  background-color: #b0dff7;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  @media screen and (max-width: 568px) {
+    flex-direction: column;
+    justify-content: center;
+  }
+}
+
+.dashboardUserCoursesTypeCardImage > img {
+  width: 110px;
+  height: 110px;
+  padding: 1rem;
+  border-radius: 10px;
+  @media screen and (max-width: 568px) {
+    width: 80px;
+    height: 80px;
+  }
+}
+.dashboardUserCoursesTypeCardName {
+  width: 60%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  text-align: left;
+  font-weight: normal;
+  @media screen and (max-width: 568px) {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+.dashboardUserCoursesTypeCardName1 {
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+.dashboardUserCoursesTypeCardName2 {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: #838080;
+}
+
+.dashboardUserCoursesTypeCardName3 {
+  font-size: 0.8rem;
+  color: #838080;
+  font-weight: bold;
+}
+.dashboardUserCoursesTypeCardButton {
+  display: flex;
+  justify-content: flex-end;
+  cursor: pointer;
+  font-size: 2.2rem;
+}
+
+.studyPlannerUserCard {
+  border: 1px solid #a3a3a3;
+  width: 100%;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 1rem;
+  font-size: 0.8rem;
+
+  &:hover {
+    background-color: #6090f7;
+    color: white;
+    cursor: pointer;
+    border: none;
+  }
+}
+
+.studyPlannerPage2UserCard {
+  border: 1px solid #a3a3a3;
+  padding: 1rem;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  align-items: center;
+  font-weight: 600;
+  &:hover {
+    background-color: #6090f7;
+    color: white;
+    cursor: pointer;
+    border: none;
+  }
+}
+
+.studyPlannerPage2UserCard.active {
+  background-color: #6090f7;
+  color: white;
+  cursor: pointer;
+  border: none;
+}
+
+.common_studyPlannerPage2UserCardImage > img {
+  width: 100%;
+  height: 100%;
+  border: 1px solid red;
+}
+
+.studyPlannerUserCardPage5 {
+  border: 1px solid #cecece;
+  border-radius: 10px;
+
+  border-radius: 15px;
+  background-color: white;
+  overflow: hidden;
+  padding-bottom: 1rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 370px;
+  width: 100%;
+}
+
+.studyPlannerUserCardPage5P1 {
+  background-color: #dcf2ff;
+  color: #6090f7;
+  padding: 1rem;
+  border-radius: 10px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.studyPlannerUserCardPage5P1.Active {
+  background-color: #ffe3e3;
+  color: #fd5602;
+}
+
+.studyPlannerUserCardPage5P2 {
+  font-weight: 500;
+  text-align: left;
+  padding: 0 0.5rem;
+}
+
+.studyPlannerUserCardPage5P3 {
+  text-align: left;
+
+  width: 98%;
+  margin: auto;
+  text-align: justify;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.studyPlannerUserCardPage5P4 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #e2e2e2;
+  padding: 0.5rem;
+  border-radius: 10px;
+  width: 98%;
+  margin: auto;
+  text-align: justify;
+  display: flex;
+  flex-direction: row;
+  gap: 0.5rem;
+}
+
+.studyPlannerUserCardPage5P4Icon {
+  width: 20px !important;
+  height: 20px !important;
+  margin-left: 1rem;
+}
+
+.studyPlannerUserCardPage5P5 {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  margin-top: 1rem;
+}
+
+.studyPlannerUserCardPage5Button {
+  border-radius: 10px;
+  color: white;
+  background-color: #2a2bfa;
+  border: none !important;
+  font-weight: 500;
+  width: 70%;
+  padding: 0.5rem;
+}
+.studyPlannerUserCardPage5Button.Active {
+  background-color: #ffe3e3;
+  color: #fd5602;
+}
+.studyPlannerUserCardPage5ButtonIcon {
+  width: 50px;
+  height: 50px;
+  font-size: 1.2rem;
+}
+
+.studyPlannerUserCardPage5Button1 {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.1rem 0.2rem;
+}
+
+.dashboardUserCoursesTypeCardCoursePage3 {
+  border-radius: 10px;
+  background-color: white;
+  display: flex;
+  align-items: center;
+  padding: 1rem 2rem;
+  justify-content: space-between;
+}
+
+.dashboardUserCoursesTypeCardCoursePage3Span1Span1Img {
+  max-width: 70px;
+  max-height: 70px;
+  border-radius: 10px;
+}
+
+.dashboardUserCoursesTypeCardCoursePage3Span1 {
+  display: flex;
+  gap: 1rem;
+}
+
+.dashboardUserCoursesTypeCardCoursePage3Span1Span2 {
+  font-weight: bold;
+}
+
+.dashboardUserCoursesTypeCardCoursePage3Span1Span2 {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.dashboardUserCoursesTypeCardCoursePage3Span1Span2 > span:nth-child(1) {
+  color: #000;
+  font-size: 1.2rem;
+}
+.dashboardUserCoursesTypeCardCoursePage3Span1Span2 > span:nth-child(2) {
+  color: #a3a3a3;
+  font-weight: normal;
+  font-size: 1rem;
+}
+
+.dashboardUserCoursesTypeCardCoursePage3Span2 {
+  width: 30px;
+  height: 40px;
+  cursor: pointer;
+}
+
+.capsuleUserCardComponentCourseP4Body {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.capsuleUserCardComponentCourseP4BodySpan {
+  background-color: #e2e2e2;
+  color: #3e3e45;
+  font-size: 1rem;
+  padding: 0.5rem 1.5rem;
+  border-radius: 10px;
+  margin-bottom: 2rem;
+  cursor: pointer;
+}
+.capsuleUserCardComponentCourseP4BodySpan.active {
+  background-color: #b3def7;
+}
+
+.capsuleUserCardComponentCourseP4Content {
+  padding: 1rem;
+  background-color: white;
+  box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+  cursor: pointer;
+}
+
+.capsuleUserCardComponentCourseP4BodyDiv {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.capsuleUserCardComponentCourseP4BodyDivicon {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.capsuleUserCardComponentCourseP4BodyDivicon > span:nth-child(1) {
+  font-size: 1.5rem;
+  color: #3e3e45;
+}
+.capsuleUserCardComponentCourseP4BodyDivicon > span:nth-child(1) img {
+  width: 70px;
+  height: 70px;
+  object-fit: contain;
+  object-position: center;
+  border-radius: 10px;
+}
+.capsuleUserCardComponentCourseP4BodyDivicon > span:nth-child(2) {
+  font-size: 1rem;
+  color: #a3a3a3;
+}
+
+.capsuleUserCardComponentCourseP4BodyDiviconSpan {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  font-weight: bold;
+}
+
+.capsuleUserCardComponentCourseP4BodyDiviconSpan > span:nth-child(1) {
+  font-size: 1rem;
+  font-weight: normal;
+  color: #000;
+}
+
+.swiperSlideGoalPage1 {
+  padding: 1rem;
+
+  text-align: center;
+  font-size: 1rem;
+}
+
+.selectedSlideGoalPage1 {
+  color: #2a2bfa;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.unselectedSlideGoalPage1 {
+  color: #3e3e45;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.dashboardCardSingleItem {
+  border: 1px solid #cecece;
+  border-radius: 10px;
+
+  border-radius: 15px;
+  background-color: white;
+  overflow: hidden;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  justify-content: space-between;
+  min-height: 150px;
+  padding: 1rem;
+}
+
+.dashboardCardSingleItem img {
+  border-radius: 10px;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.dashboardCardSingleItemBody {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  justify-content: center;
+  width: 70%;
+  margin: auto;
+}
+.dashboardCardSingleItemBody Button {
+  background-color: #2a2bfa !important;
+  color: white;
+  border-radius: 10px;
+  border: none;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  font-weight: normal;
+  cursor: pointer;
+}
+
+.dashboardCardSingleItemBody Button:hover {
+  background-color: #3e3e45 !important;
+  color: white;
+}
+
+.UserTestDivContainer {
+  margin-top: 2rem;
+}
+.UserTestDivContainer1 {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.testWithDetailedAnswerCard {
+  padding: 1rem;
+  text-wrap: wrap;
+}
+
+.testWithDetailedAnswerCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid #a3a3a3;
+}
+
+.testWithDetailedAnswerCardHeader > span:nth-child(1) {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #6090f7;
+}
+
+.testWithDetailedAnswerCardHeader > span:nth-child(2) {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #000000;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.testWithDetailedAnswerCardHeader > span:nth-child(2) {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #000000;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.testWithDetailedAnswerCardHeader > span:nth-child(2) > span Icon {
+  width: 40px;
+  height: 40px;
+}
+
+.testWithDetailedAnswerCardBodyQuestion {
+  padding: 1rem;
+  font-size: 1.2rem;
+  font-weight: normal;
+  color: #a3a3a3;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.testWithDetailedAnswerCardBodyAnswer {
+  margin-top: 3rem;
+  padding: 1rem;
+  background-color: white;
+  display: flex;
+  flex-direction: column;
+  border-radius: 10px;
+}
+.testWithDetailedAnswerCardBodyAnswer > span:nth-child(1) {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #3e3e45;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.testWithDetailedAnswerCardBodyAnswer > span:nth-child(2) {
+  font-size: 1rem;
+  font-weight: normal;
+  color: #838080;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.testWithDetailedAnswerCardBodyOption {
+  padding: 1.5rem 1rem;
+  background-color: white;
+  border-radius: 10px;
+  color: #a3a3a3;
+  font-size: 1.2rem;
+  margin-top: 1rem;
+}
+
+.testWithDetailedAnswerCardBodyOption.CorrectAnswer {
+  background-color: #edf7ed;
+}
+.testWithDetailedAnswerCardBodyOption.highlightCorrect {
+  background-color: #d8eed8;
+}
+.testWithDetailedAnswerCardBodyOption.CorrectAnswer > span:nth-child(1) {
+  display: flex;
+  justify-content: space-between;
+}
+.testWithDetailedAnswerCardBodyOption.CorrectAnswer > span:nth-child(2) {
+  font-size: 0.8rem;
+  margin-left: 2.5rem;
+  color: #7de079;
+}
+
+.testWithDetailedAnswerCardBodyOption.CorrectAnswer
+  > span:nth-child(1)
+  > span:nth-child(2) {
+  color: #000;
+  font-weight: bold;
+  font-size: 0.8rem;
+}
+
+.testWithDetailedAnswerCardBodyOption.IncorrectAnswer {
+  background-color: #fae1e1;
+}
+
+.testWithDetailedAnswerCardBodyOption.IncorrectAnswer > span:nth-child(1) {
+  display: flex;
+  justify-content: space-between;
+}
+.testWithDetailedAnswerCardBodyOption.IncorrectAnswer > span:nth-child(2) {
+  font-size: 0.8rem;
+  margin-left: 2.5rem;
+  color: #ff0000;
+}
+
+.testWithDetailedAnswerCardBodyOption.IncorrectAnswer
+  > span:nth-child(1)
+  > span:nth-child(2) {
+  color: #000;
+  font-weight: bold;
+  font-size: 0.8rem;
+}
+
+.teachersCardAboutUs {
+  padding: 0.5rem;
+  border-radius: 10px;
+}
+
+.teachersCardAboutUs img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.teachersCardAboutUsContentName {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #000;
+  margin: 1rem 0;
+}
+
+.teachersCardAboutUsContentDescription {
+  font-size: 0.8rem;
+  color: #a3a3a3;
+  font-weight: bold;
+}
+.communityNotesUserCardImageSpan4Container {
+  border: 1px solid #a3a3a3;
+  padding: 1rem;
+  border-radius: 10px;
+}
+.communityNotesUserCardImageSpan4Container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 10px;
+}
+.communityNotesUserCardImageSpan4Span1Span1 {
+  color: #000;
+  font-size: 0.8rem;
+  font-weight: bold;
+  gap: 0.5rem;
+}
+.communityNotesUserCardImageSpan4Span1Span1Span2 {
+  color: #a3a3a3;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+.communityNotesUserCardImageSpan4Span1Span1Span12 {
+  color: #a3a3a3;
+  font-size: 0.8rem;
+  font-weight: bold;
+
+  gap: 0.5rem;
+}
+
+.communityNotesUserCardImageSpan5Span1 {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  color: #a3a3a3;
+  font-size: 0.8rem;
+  font-weight: bold;
+  margin-top: 1rem;
+}
+
+.communityNotesUserCardImageSpan5Span1Input {
+  width: 70% !important;
+}
+
+.communityNotesUserCardImageSpan5Span1Button {
+  width: 30% !important;
+  background-color: #2a2bfa !important;
+  color: #fff !important;
+  font-size: 0.8rem !important;
+  font-weight: bold !important;
+  border-radius: 10px !important;
+  padding: 0.5rem !important;
+}
+
+.copyCode {
+  &:hover {
+    cursor: pointer;
+    color: "blue";
+    background-color: red;
+    border-radius: 10px;
+    padding: 0.1rem 0.5rem;
+  }
+}
+
+.showMoreButton {
+  border: none !important;
+  background-color: none !important;
+  color: #6090f7 !important;
+  padding: 0.1rem 0.5rem !important;
+  border-radius: 10px !important;
+}
+.notificationIconHighlight {
+  background-color: red;
+  border-radius: 50%;
+}

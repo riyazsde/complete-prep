@@ -1,0 +1,128 @@
+.demoPage {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #ffffff, #e3e3e3); /* Soft gradient for pages */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    border: 1px solid #d3d3d3; /* Light border for separation */
+    border-radius: 8px; /* Rounded edges */
+  }
+  
+  /* FlipBook outer container */
+  .react-pageflip {
+    margin: 20px auto;
+    max-width: 80%; /* Responsive scaling */
+    max-height: 90%;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2); /* Shadow around the book */
+    border-radius: 10px; /* Rounded edges */
+    overflow: hidden;
+  }
+  
+  /* FlipBook navigation buttons (if applicable) */
+  .react-pageflip .page {
+    transition: all 0.3s ease;
+  }
+  
+  .react-pageflip .page:hover {
+    transform: scale(1.02); /* Slight zoom effect on hover */
+  }
+  
+  /* Header styles */
+  .demoPage h1 {
+    font-size: 1.5rem;
+    color: #333; /* Dark gray for text */
+    margin-bottom: 10px;
+    text-align: center;
+  }
+  
+  /* Page content styles */
+  .demoPage p {
+    font-size: 1rem;
+    line-height: 1.5;
+    color: #555; /* Slightly lighter gray for paragraph text */
+    margin: 5px 0;
+    text-align: justify;
+  }
+  
+  /* Page number styles */
+  .demoPage p:last-child {
+    margin-top: auto; /* Push page number to the bottom */
+    font-size: 0.85rem;
+    color: #888; /* Lighter gray for page numbers */
+    text-align: right;
+    width: 100%;
+  }
+  
+  /* Add a hover effect to make the experience interactive */
+  .demoPage:hover {
+    background: linear-gradient(135deg, #ffffff, #f2f2f2);
+    transform: translateY(-2px);
+  }
+  
+  /* Responsive adjustments for smaller screens */
+  @media (max-width: 768px) {
+    .react-pageflip {
+      max-width: 100%;
+      height: auto;
+    }
+  
+    .demoPage {
+      padding: 10px;
+    }
+  
+    .demoPage h1 {
+      font-size: 1.2rem;
+    }
+  
+    .demoPage p {
+      font-size: 0.9rem;
+    }
+  }
+  .myBookContainer {
+    position: relative;
+    width: 100%;
+    max-width: 800px;
+    margin: auto;
+    text-align: center;
+  }
+  
+  .fullscreenButton {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    z-index: 10;
+  }
+  
+  .fullscreenButton:hover {
+    background-color: #0056b3;
+  }
+  
+  .demoPage {
+    width: 100%;
+    height: 100%;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+  }
+  
+  .pageNumber {
+    margin-top: 10px;
+    font-size: 1rem;
+    color: #666;
+  }

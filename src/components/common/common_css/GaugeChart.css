@@ -1,0 +1,30 @@
+.gauge-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: Arial, sans-serif;
+  }
+  
+  .gauge {
+    transform: rotate(-90deg);
+    width: 120px;
+    height: 60px;
+  }
+  
+  .gauge-label {
+    text-align: center;
+    margin-top: 10px;
+  }
+  
+  .percentage {
+    font-size: 18px;
+    color: #3b82f6; /* Tailwind blue-500 color */
+    font-weight: bold;
+  }
+  
+  .label {
+    font-size: 14px;
+    color: #6b7280; /* Tailwind gray-500 color */
+  }
+  

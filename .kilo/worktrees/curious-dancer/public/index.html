@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="description" content="Semprep - Everything you need to ace your semester exams." />
+    <meta
+      name="keywords"
+      content="online learning, mock tests, exam preparation, students platform, semprep"
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://semprep.com/" />
+    <meta property="og:title" content="Semprep | Online Learning Platform" />
+    <meta
+      property="og:description"
+      content="Transform your learning experience with Semprep's comprehensive digital solutions"
+    />
+    <link rel="canonical" href="https://www.semprep.com/" />
+    <meta property="og:image" content="https://www.semprep.com/favicon.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:alt" content="Semprep Logo" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Semprep | Online Learning Platform" />
+    <meta
+      name="twitter:description"
+      content="Transform your learning experience with Semprep's comprehensive digital solutions"
+    />
+    <meta
+  name="twitter:image"
+  content="https://www.semprep.com/favicon.png"
+/>
+<link rel="apple-touch-icon" href="/favicon.png" />
+<meta property="og:image" content="https://www.semprep.com/favicon.png" />
+<meta name="robots" content="index, follow" />
+    <meta name="twitter:image:alt" content="Semprep Logo" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/favicon.png" />
+    <link rel="shortcut icon" href="/favicon.png" type="image/x-icon" />
+    <link rel="manifest" href="/manifest.json" />
+    <link href="https://fonts.cdnfonts.com/css/satoshi" rel="stylesheet" />
+    <link rel="preconnect" href="https://unpkg.com" />
+    <link rel="preconnect" href="https://checkout.razorpay.com" />
+    <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" as="style" />
+
+    <title>Semprep</title>
+
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="
+    default-src 'self' https:;
+    script-src 'self' https: 'unsafe-inline' 'unsafe-eval';
+    style-src 'self' https: 'unsafe-inline';
+    font-src 'self' https: data:;
+    img-src 'self' https: data: blob:;
+    connect-src 'self' https:;
+    media-src 'self' https: data: blob:;
+  "
+    />
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-QXMXNP0ZRD"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag('js', new Date());
+      gtag('config', 'G-QXMXNP0ZRD');
+    </script>
+
+    <!-- Microsoft Clarity -->
+    <script type="text/javascript">
+      (function (c, l, a, r, i, t, y) {
+        c[a] =
+          c[a] ||
+          function () {
+            (c[a].q = c[a].q || []).push(arguments);
+          };
+        t = l.createElement(r);
+        t.async = 1;
+        t.src = 'https://www.clarity.ms/tag/' + i;
+        y = l.getElementsByTagName(r)[0];
+        y.parentNode.insertBefore(t, y);
+      })(window, document, 'clarity', 'script', 'wj9gsomdjw');
+    </script>
+  </head>
+
+  <body>
+    <noscript>
+      <div class="noscript-warning">
+        <h1>JavaScript Required</h1>
+        <p>For full functionality of this site, please enable JavaScript in your browser.</p>
+        <p>
+          Here are the
+          <a href="https://www.enable-javascript.com/" target="_blank" rel="noopener noreferrer">
+            instructions how to enable JavaScript in your web browser </a
+          >.
+        </p>
+      </div>
+    </noscript>
+
+    <div id="root" role="main"></div>
+
+    <script
+      src="https://checkout.razorpay.com/v1/checkout.js"
+      async
+      defer
+      crossorigin="anonymous"
+    ></script>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        const img = new Image();
+        img.onerror = function () {
+          const metas = document.querySelectorAll('[property="og:image"], [name="twitter:image"]');
+          metas.forEach(meta => {
+            meta.content = 'https://digitalbenchers.com/images/social-fallback.png';
+          });
+        };
+        img.src =
+          'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"></svg>';
+      });
+    </script>
+  </body>
+</html>

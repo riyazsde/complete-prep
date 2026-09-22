@@ -1,0 +1,24 @@
+/* Loader Container */
+/*  */
+  
+
+  /* No Data Found Container */
+  .noDataContainer {
+    text-align: center;
+    padding: 50px 20px;
+    font-size: 1.5rem;
+    color: #555;
+    background-color: #f9f9f9;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin: 20px auto;
+    max-width: 400px;
+  }
+  
+
+  .loaderContainer{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 2rem;
+  }

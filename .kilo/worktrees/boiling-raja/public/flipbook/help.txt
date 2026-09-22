@@ -1,0 +1,12 @@
+Basic Instructions:
+
+1. Extract the content of the .zip file.
+
+2. Connect to your website files management system (FTP or CPanel). 
+Upload the /flipbook/ folder on your website root (public_html)
+
+3. Overwrite / Replace the existing "sample.pdf" file with your own file.
+
+Test it on your browser (http://www.yousitename.com/flopbook/index.html)
+
+If you need further support please don't hesitate to e-mail us at support @ pdf - flip . com

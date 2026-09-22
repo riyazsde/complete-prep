@@ -1,0 +1,97 @@
+.addToCart {
+  background-color: white;
+
+  padding: 1rem;
+  border-radius: 10px;
+  padding-bottom: 2rem;
+  height: auto;
+}
+
+.addToCartImage {
+  max-height: 250px;
+  max-width: 100%;
+
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 1rem;
+}
+
+.addToCartImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  mask-image: linear-gradient(135deg, transparent 15%, black 0);
+  -webkit-mask-image: linear-gradient(135deg, transparent 15%, black 0);
+}
+
+.addToCartName {
+  margin: 1rem 0;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+.addToCartCourseHighlightsText {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 1rem 0;
+  color: #000;
+}
+
+.addToCartCourseHighlightsItem {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.addToCartCourseHighlightsItem > span:nth-child(2) {
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: #000;
+}
+
+.addToCartCourseHighlightsItems {
+  border-bottom: 7px solid #d9d9d9;
+  padding-bottom: 2rem;
+}
+
+.addToCartPrice {
+  font-weight: 600;
+  font-size: 1.5rem;
+  margin: 1rem 0;
+}
+
+.addToCartPromoCodesInput {
+  border: 1px dashed #d9d9d9 !important;
+}
+
+.addToCartButton {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+.addToCartButton > span:nth-child(1) {
+  /* border: 1px solid #2a2bfa; */
+  padding: 0.5rem;
+  border-radius: 10px;
+}
+.addToCartIcon {
+  width: 30px;
+  height: 30px;
+  color: #2a2bfa;
+}
+.addToCartButtonAdd {
+  width: 100% !important;
+  background-color: #2a2bfa !important;
+  color: #fff !important;
+  border: none !important;
+  max-width: 200px;
+  &:hover {
+    background-color: #3e3e45 !important;
+    border: none !important;
+  }
+}
+
