@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState, useContext } from 'react';
+import axios from 'axios';
 import { Icon } from '@iconify/react';
 import { userApi } from '../../services/apiFunctions';
 import { AuthContext } from '../../Context/AuthContext';
@@ -17,7 +18,6 @@ const Header = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalJoinVisible, setModalJoinVisible] = useState(false);
-  // ✅ CHANGE 1: added isAuthenticated
   const { user, setUser, isAuthenticated } = useContext(AuthContext);
   const [nextPage, setNextPage] = useState('');
   const [goalCategory, setGoalCategory] = useState([]);
@@ -45,7 +45,11 @@ const Header = () => {
   const [goalError, setGoalError] = useState('');
   const [mainUniversitiesLoading, setMainUniversitiesLoading] = useState(false);
   const [selectedSemester, setSelectedSemester] = useState('');
+  const [selectedSemesterData, setSelectedSemesterData] = useState(null); // ✅ full semester object
   const isActive = path => location.pathname === path;
+
+  // Public base URL — no token needed
+  const PUBLIC_API_BASE = 'https://api.semprep.com/api/v1';
 
   const resetForm = () => {
     setForm({
@@ -62,9 +66,11 @@ const Header = () => {
     setModalJoinVisible(false);
     resetForm();
   };
+
   const toggleDropdown = state => {
     setCurrentState(currentState === state ? null : state);
   };
+
   useEffect(() => {
     const handleClickOutside = e => {
       if (sidebarRef.current && !sidebarRef.current.contains(e.target)) {
@@ -79,7 +85,9 @@ const Header = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isSidebarOpen]);
 
+  // ✅ FIX: reset mounted to true on mount (React 18 Strict Mode dev double-invoke)
   useEffect(() => {
+    mounted.current = true;
     return () => {
       mounted.current = false;
     };
@@ -139,41 +147,100 @@ const Header = () => {
     });
   };
 
+  // ✅ Public semester fetch with full console logging
   const fetchSemestersForGoal = async goalId => {
     if (!selectedGoalCategory || !goalId) return;
     setSemesterLoading(true);
     setSemesterError('');
-    await userApi.semesterExam.getAll({
-      params: { goalCategory: selectedGoalCategory, goal: goalId },
-      onSuccess: data => {
-        setGoalSemesters(prev => ({
-          ...prev,
-          [goalId]: data?.data || [],
-        }));
-      },
-      onError: error => {
-        console.error('Error fetching semesters for goal:', error);
-        setGoalSemesters(prev => ({ ...prev, [goalId]: [] }));
-        setSemesterError('Failed to load semesters.');
-      },
-      setIsLoading: setSemesterLoading,
-    });
+
+    const url = `${PUBLIC_API_BASE}/user/semester`;
+    const params = { goalCategory: selectedGoalCategory, goal: goalId };
+
+    console.log('🟡 [semester] REQUEST →', url, params);
+
+    try {
+      const { data, status } = await axios.get(url, {
+        params,
+        timeout: 15000,
+      });
+
+      console.log('🟢 [semester] RESPONSE status:', status);
+      console.log('🟢 [semester] RESPONSE data:', data);
+      console.log('🟢 [semester] semesters array:', data?.data);
+      console.log(
+        '🟢 [semester] semesterNumbers:',
+        (data?.data || []).map(s => s?.semesterNumber)
+      );
+      console.log(
+        '🟢 [semester] subjects per semester:',
+        (data?.data || []).map(s => ({
+          semester: s?.semesterNumber,
+          subjects: (s?.subjects || []).map(x => x?.name),
+        }))
+      );
+
+      if (!mounted.current) {
+        console.warn('🟠 [semester] component unmounted, skipping setState');
+        return;
+      }
+
+      setGoalSemesters(prev => ({
+        ...prev,
+        [goalId]: data?.data || [],
+      }));
+    } catch (error) {
+      console.error('🔴 [semester] ERROR message:', error?.message);
+      console.error('🔴 [semester] ERROR code:', error?.code);
+      console.error('🔴 [semester] ERROR status:', error?.response?.status);
+      console.error('🔴 [semester] ERROR response:', error?.response?.data);
+      console.error('🔴 [semester] ERROR config:', {
+        url: error?.config?.url,
+        params: error?.config?.params,
+        baseURL: error?.config?.baseURL,
+      });
+
+      if (!mounted.current) return;
+
+      setGoalSemesters(prev => ({ ...prev, [goalId]: [] }));
+      setSemesterError(
+        error?.response?.status
+          ? `Failed to load semesters (${error.response.status}).`
+          : `Failed to load semesters (${error?.message || 'network error'}).`
+      );
+    } finally {
+      console.log('⚪ [semester] FINALLY — loading off');
+      if (mounted.current) setSemesterLoading(false);
+    }
   };
 
   const handleGoalClick = item => {
     const id = item?._id;
+    console.log('🔵 [goal] clicked →', { id, name: item?.name, selectedGoalCategory });
+
     setSelectedGoal(id);
     sessionStorage.setItem('courseId', id);
-
     setNextPage(`/semester-exam/${selectedGoalCategory}/${id}`);
-    if (!goalSemesters[id]) {
+
+    // ✅ FIX: also refetch if cached array is empty
+    const cached = goalSemesters[id];
+    if (!cached || cached.length === 0) {
       fetchSemestersForGoal(id);
+    } else {
+      console.log('🟣 [goal] using cached semesters:', cached.length);
     }
   };
 
-  // ✅ CHANGE 2: new helper to handle semester click with auth check
-  const handleSemesterClick = semesterId => {
+  // ✅ now receives the full semester object
+  const handleSemesterClick = semester => {
+    const semesterId = semester?._id;
+    console.log('🔵 [semester] clicked →', {
+      id: semesterId,
+      semesterNumber: semester?.semesterNumber,
+      subjects: (semester?.subjects || []).map(s => s?.name),
+    });
+
     setSelectedSemester(semesterId);
+    setSelectedSemesterData(semester); // full object incl. subjects
     sessionStorage.setItem('semesterId', semesterId);
 
     if (!isAuthenticated) {
@@ -188,6 +255,7 @@ const Header = () => {
   useEffect(() => {
     setSelectedGoal('');
     setSelectedSemester('');
+    setSelectedSemesterData(null);
     setGoalSemesters({});
     setSemesterError('');
     setGoalError('');
@@ -326,7 +394,6 @@ const Header = () => {
     }
   };
 
-  // ✅ CHANGE 3: fixed field swap + auth check + removed console.log
   const handleDirect = semesterId => {
     if (!isAuthenticated) {
       setStep('login');
@@ -515,10 +582,9 @@ const Header = () => {
                                     </span>
                                   ) : (goalSemesters[item?._id] || []).length > 0 ? (
                                     (goalSemesters[item?._id] || []).map((semester, idx) => (
-                                      // ✅ CHANGE 4: use handleSemesterClick
                                       <span
                                         key={idx}
-                                        onClick={() => handleSemesterClick(semester?._id)}
+                                        onClick={() => handleSemesterClick(semester)}
                                         className={`px-3 py-1 text-sm cursor-pointer rounded-3xl ${
                                           selectedSemester === semester?._id
                                             ? 'bg-black text-white'
@@ -561,6 +627,25 @@ const Header = () => {
             </div>
           </div>
         </div>
+
+        {/* Subjects preview for clicked semester (uses API data, no extra call) */}
+        {selectedSemesterData && (
+          <div className="hidden lg:block px-6 pb-3">
+            <div className="text-xs text-gray-500 mb-1">
+              Semester {selectedSemesterData?.semesterNumber} — Subjects:
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {(selectedSemesterData?.subjects || []).map(s => (
+                <span
+                  key={s?._id}
+                  className="px-2 py-1 text-xs bg-[#f4f4f4] rounded-lg border border-gray-200"
+                >
+                  {s?.name}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className={`fixed inset-0 z-50 transition ${isSidebarOpen ? 'visible' : 'invisible'}`}>
           <div
@@ -673,11 +758,10 @@ const Header = () => {
                                     </span>
                                   ) : (goalSemesters[item?._id] || []).length > 0 ? (
                                     (goalSemesters[item?._id] || []).map((semester, idx) => (
-                                      // ✅ CHANGE 5: use handleSemesterClick + close sidebar
                                       <span
                                         key={idx}
                                         onClick={() => {
-                                          handleSemesterClick(semester?._id);
+                                          handleSemesterClick(semester);
                                           setIsSidebarOpen(false);
                                         }}
                                         className={`px-3 py-1 text-sm cursor-pointer rounded-3xl ${
