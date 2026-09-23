@@ -23,6 +23,7 @@ const NewStudyPlannerAiPage1Main = () => {
 
   const fetchData = async () => {
     try {
+      setIsLoading(true);
       await userApi.goal.getByGoalCategory({
         id: user?.goalCategory?._id,
         setIsLoading: setIsLoading,
@@ -32,9 +33,14 @@ const NewStudyPlannerAiPage1Main = () => {
           setCourses(fetchedCourses);
           setIsLoading(false);
         },
+        onError: () => {
+          setCourses([]);
+          setIsLoading(false);
+        },
       });
     } catch (error) {
       console.error('Failed to fetch courses:', error);
+      setCourses([]);
       setIsLoading(false);
     }
   };
@@ -42,9 +48,20 @@ const NewStudyPlannerAiPage1Main = () => {
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/login');
-    } else if (user && user.goal) {
-      fetchData();
+      return;
     }
+
+    // Check if user exists and has required data
+    if (user) {
+      if (user?.goalCategory?._id) {
+        fetchData();
+      } else {
+        // No goal category, stop loading and show empty state
+        setCourses([]);
+        setIsLoading(false);
+      }
+    }
+    // If user is not yet loaded, keep loading state
   }, [isAuthenticated, user, searchQuery, user?.goalCategory]);
 
   const handleCourseClick = courseId => {
@@ -77,100 +94,45 @@ const NewStudyPlannerAiPage1Main = () => {
                 </div>
               </div>
             </div>
-            {/* <div className="text-gray-500 flex items-center space-x-2 gap-4">
-              <span className="flex items-center space-x-2 gap-2">
-                <Icon icon="uil:graph-bar" className="text-gray-500" /> Category
-              </span>
-              <span className="flex items-center space-x-2 gap-2">
-                <Icon
-                  icon="material-symbols-light:dashboard-outline-rounded"
-                  className="text-gray-500"
-                />
-                Category
-              </span>
-              <span className="flex items-center space-x-2 gap-2">
-                <Icon icon="akar-icons:sort" className="text-gray-500" /> Sort
-                by Popular
-              </span>
-            </div> */}
           </div>
           <div>
             <div>
-              {/* <p className="inline-block px-4 py-2 text-lg bg-[#3DD455] hover:bg-black text-white font-bold rounded-3xl">
-                Popular Courses
-              </p> */}
               <div className="w-full">
                 {isLoading ? (
-                  <div className="flex justify-center mt-8 w-full">
-                    <p>Loading...</p>
+                  <div className="flex justify-center items-center mt-8 w-full min-h-[200px]">
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+                      <p className="text-gray-500">Loading...</p>
+                    </div>
                   </div>
-                ) : (
+                ) : courses.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mt-4">
-                    {/* {courses?.map((course, index) => (
-                      <div
-                        key={course._id}
-                        className="relative min-h-[220px] rounded-xl p-4 border-2 cursor-pointer"
-                        style={{
-                          backgroundColor: bgColors[index % bgColors.length],
-                          borderColor: borderColors[index % borderColors.length],
-                        }}
-                        onClick={() => handleCourseClick(course._id)}
-                      >
-                        <div className="absolute top-3 left-3 w-[70px] h-[70px] flex items-center justify-center overflow-hidden">
-                          <img
-                            src={course.image}
-                            alt={course.title}
-                            className="w-[50px] h-[50px] object-cover rounded-full"
-                          />
-                        </div>
-                        <div
-                          className="absolute bottom-3 left-3 text-base font-bold"
-                          style={{
-                            color: titleColors[index % titleColors.length],
-                          }}
-                        >
-                          {course.name}
-                          {console.log(course)}
-                        </div>
-                        <div
-                          className="absolute text-[64px] font-extrabold opacity-5 whitespace-nowrap"
-                          style={{
-                            bottom: '8px',
-                            right: '10px',
-                            color: titleColors[index % titleColors.length],
-                          }}
-                        >
-                          {course?.name?.toUpperCase()?.slice(0, 4)}
-                        </div>
-                        <div
-                          className="absolute bottom-3 right-3 text-lg font-bold"
-                          style={{
-                            color: titleColors[index % titleColors.length],
-                          }}
-                        >
-                          ›
-                        </div>
-                      </div>
-                    ))} */}
                     {courses?.map((course, index) => (
                       <div
-                        key={index}
+                        key={course?._id || index}
                         onClick={() => handleCourseClick(course?._id)}
                         className="relative w-full pt-[120%] rounded-lg overflow-hidden cursor-pointer group"
                       >
                         <img
                           src={course.image}
-                          alt="Course Thumbnail"
+                          alt={course.name || 'Course Thumbnail'}
                           className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                         />
                       </div>
                     ))}
-
                   </div>
-                )}
-                {!isLoading && courses.length === 0 && (
-                  <div className="flex justify-center items-center mt-8 w-full">
-                    <p>No courses found for your goal category. Please check back later.</p>
+                ) : (
+                  <div className="flex flex-col justify-center items-center mt-8 w-full min-h-[200px]">
+                    <Icon
+                      icon="mdi:book-open-page-variant-outline"
+                      className="text-6xl text-gray-300 mb-4"
+                    />
+                    <p className="text-gray-500 text-lg font-medium">No courses found</p>
+                    <p className="text-gray-400 text-sm mt-1">
+                      {searchQuery
+                        ? 'Try adjusting your search query'
+                        : 'No courses available for your goal category. Please check back later.'}
+                    </p>
                   </div>
                 )}
               </div>
