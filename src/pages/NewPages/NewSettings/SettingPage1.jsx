@@ -1,5 +1,5 @@
 import { Icon } from '@iconify/react';
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserMenuBar } from '../../../components/common/MenuBar';
 import HOC from '../../../components/layout/HOC';
@@ -17,11 +17,95 @@ import {
   clearSubscriptionCache,
 } from '../../../utils/subscriptionCache';
 
+// ============================================================
+// 🔤 NAME HELPERS
+// ============================================================
+const pickFirstNonEmptyString = (...values) => {
+  for (const v of values) {
+    if (typeof v === 'string' && v.trim()) return v.trim();
+  }
+  return '';
+};
+
+const resolveDisplayName = (user) => {
+  if (!user) return 'User';
+  const fromNames = pickFirstNonEmptyString(
+    user.fullName,
+    user.name,
+    user.userName,
+    user.username,
+    user.displayName
+  );
+  if (fromNames) return fromNames;
+
+  if (typeof user.email === 'string' && user.email.includes('@')) {
+    const prefix = user.email.split('@')[0].trim();
+    if (prefix) return prefix;
+  }
+  if (user.mobileNumber) return `User ${user.mobileNumber}`;
+  return 'User';
+};
+
+const resolveInitials = (name) => {
+  if (!name || typeof name !== 'string') return '?';
+  const parts = name.split(/\s+/).filter(Boolean);
+  if (!parts.length) return '?';
+  return (
+    parts
+      .slice(0, 2)
+      .map((w) => (w[0] ? w[0].toUpperCase() : ''))
+      .join('') || '?'
+  );
+};
+
+// ============================================================
+// 💳 RAZORPAY SCRIPT LOADER
+// ============================================================
+let razorpayScriptPromise = null;
+
+const loadRazorpayScript = () => {
+  if (window.Razorpay) return Promise.resolve(true);
+  if (razorpayScriptPromise) return razorpayScriptPromise;
+
+  razorpayScriptPromise = new Promise((resolve, reject) => {
+    const existing = document.querySelector(
+      'script[data-razorpay-checkout="true"]'
+    );
+
+    if (existing) {
+      existing.addEventListener('load', () => resolve(true), { once: true });
+      existing.addEventListener(
+        'error',
+        () => reject(new Error('Razorpay checkout failed to load')),
+        { once: true }
+      );
+      if (window.Razorpay) resolve(true);
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.dataset.razorpayCheckout = 'true';
+    script.onload = () => resolve(true);
+    script.onerror = () => {
+      razorpayScriptPromise = null;
+      reject(new Error('Razorpay checkout failed to load'));
+    };
+    document.body.appendChild(script);
+  });
+
+  return razorpayScriptPromise;
+};
+
 const SettingPage1 = () => {
   const navigate = useNavigate();
   const { user, setUser, logout, isAuthenticated } = useContext(AuthContext);
   const goal = user?.goal || '';
 
+  // =========================================================
+  // STATE
+  // =========================================================
   const [activeTab, setActiveTab] = useState('Profile');
   const [modalVisible, setModalVisible] = useState(false);
   const [subscriptions, setSubscriptions] = useState([]);
@@ -30,8 +114,10 @@ const SettingPage1 = () => {
   const [loadingPlanId, setLoadingPlanId] = useState(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showBannerModal, setShowBannerModal] = useState(false);
+  const [loadingSubscriptions, setLoadingSubscriptions] = useState(false);
 
-  // Hydrate subscription state from cache
+  const subscribeLockRef = useRef(false);
+
   const [subscriptionStatus, setSubscriptionStatus] = useState(() => {
     const cached = getSubscriptionCache();
     return Boolean(cached?.isActive);
@@ -41,32 +127,82 @@ const SettingPage1 = () => {
     return cached?.isActive ? cached : null;
   });
 
-  const [profileData, setProfileData] = useState({
-    avatar: user?.image || '',
-    fullName: user?.fullName || '',
-    email: user?.email || '',
-    language: user?.language || 'English',
-    timezone: '',
-    mobileNumber: user?.mobileNumber || '',
-    linkedInUrl: user?.linkedInUrl || '',
-  });
-
   const [transactions, setTransactions] = useState([]);
   const [dashboards] = useState([
-    { title: 'My Success Roadmap', icon: images.newSettingDashboardImage1, color: 'bg-green-100' },
-    { title: 'Videos Analysis', icon: images.newSettingDashboardImage2, color: 'bg-red-100' },
-    { title: 'Practice Analysis', icon: images.newSettingDashboardImage3, color: 'bg-yellow-100' },
-    { title: 'Tests Analysis', icon: images.newSettingDashboardImage4, color: 'bg-blue-100' },
-    { title: 'My Skills Analysis', icon: images.newSettingDashboardImage5, color: 'bg-gray-100' },
-    { title: 'Capsule Course Analysis', icon: images.newSettingDashboardImage6, color: 'bg-purple-100' },
-    { title: 'Notes by Toppers Analysis', icon: images.newSettingDashboardImage7, color: 'bg-indigo-100' },
+    {
+      title: 'My Success Roadmap',
+      icon: images.newSettingDashboardImage1,
+      color: 'bg-green-100',
+    },
+    {
+      title: 'Videos Analysis',
+      icon: images.newSettingDashboardImage2,
+      color: 'bg-red-100',
+    },
+    {
+      title: 'Practice Analysis',
+      icon: images.newSettingDashboardImage3,
+      color: 'bg-yellow-100',
+    },
+    {
+      title: 'Tests Analysis',
+      icon: images.newSettingDashboardImage4,
+      color: 'bg-blue-100',
+    },
+    {
+      title: 'My Skills Analysis',
+      icon: images.newSettingDashboardImage5,
+      color: 'bg-gray-100',
+    },
+    {
+      title: 'Capsule Course Analysis',
+      icon: images.newSettingDashboardImage6,
+      color: 'bg-purple-100',
+    },
+    {
+      title: 'Notes by Toppers Analysis',
+      icon: images.newSettingDashboardImage7,
+      color: 'bg-indigo-100',
+    },
   ]);
   const [timelineEvents, setTimelineEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isReferalButtonVisible, setIsReferalButtonVisible] = useState(false);
 
-  // Derived single source of truth
   const isSubscribed = subscriptionStatus || user?.isSubscribed;
+  const displayName = resolveDisplayName(user);
+  const initials = resolveInitials(displayName);
+
+  // =========================================================
+  // RESOLVE SEMESTER
+  // =========================================================
+  const resolveSemester = (override) => {
+    if (override) {
+      return typeof override === 'object' ? override?._id : override;
+    }
+    if (user?.semester) {
+      return typeof user.semester === 'object'
+        ? user.semester?._id
+        : user.semester;
+    }
+    if (user?.semesterId) return user.semesterId;
+
+    const stored = sessionStorage.getItem('semesterId');
+    if (stored) return stored;
+
+    try {
+      const storedUser = JSON.parse(localStorage.getItem('user') || 'null');
+      if (storedUser?.semester) {
+        return typeof storedUser.semester === 'object'
+          ? storedUser.semester?._id
+          : storedUser.semester;
+      }
+      if (storedUser?.semesterId) return storedUser.semesterId;
+    } catch {
+      /* ignore */
+    }
+    return undefined;
+  };
 
   // =========================================================
   // AUTH GUARD
@@ -82,38 +218,27 @@ const SettingPage1 = () => {
   }, [isAuthenticated, goal]);
 
   // =========================================================
-  // FETCH TRANSACTIONS + TIMELINE
+  // FETCH DATA
   // =========================================================
   const fetchData = () => {
     userApi.subscriptions.transactions({
       setIsLoading,
-      onSuccess: (res) => {
-        setTransactions(res?.data || []);
-      },
-      onError: (err) => {
-        console.error('Failed to fetch transactions:', err);
-      },
+      onSuccess: (res) => setTransactions(res?.data || []),
+      onError: (err) => console.error('Failed to fetch transactions:', err),
     });
 
     userApi.settingPage.getTimeLine({
-      onSuccess: (res) => {
-        setTimelineEvents(res?.data || []);
-      },
-      onError: (err) => {
-        console.error('Failed to fetch timeline events:', err);
-      },
+      onSuccess: (res) => setTimelineEvents(res?.data || []),
+      onError: (err) => console.error('Failed to fetch timeline events:', err),
     });
   };
 
-  // =========================================================
-  // UPDATE USER BANNER
-  // =========================================================
   const updateUserBanner = async () => {
     userApi.landingPage.updateBannerStatus({
       data: {
         goalCategory: user?.goalCategory || '',
         goal: user?.goal || '',
-        semester: user?.semester || '',
+        semester: resolveSemester() || '',
         firstVideoBanner: true,
       },
       onSuccess: () => {
@@ -129,17 +254,13 @@ const SettingPage1 = () => {
     });
   };
 
-  // =========================================================
-  // FETCH CURRENT SUBSCRIPTION (returns Promise)
-  // =========================================================
   const fetchSubScription = () => {
     return new Promise((resolve) => {
       userApi.subscriptions.getSubscription({
-        params: { semester: user?.semester },
+        params: { semester: resolveSemester() },
         showMsg: false,
         onSuccess: (res) => {
           const current = res?.data || null;
-
           if (current?.isActive) {
             setSubscriptionStatus(true);
             setCurrentSubscription(current);
@@ -148,7 +269,6 @@ const SettingPage1 = () => {
             resolve(current);
             return;
           }
-
           setSubscriptionStatus(false);
           setCurrentSubscription(null);
           setUser((prev) => ({ ...prev, isSubscribed: false }));
@@ -171,40 +291,34 @@ const SettingPage1 = () => {
     });
   };
 
-  // =========================================================
-  // FETCH ALL SUBSCRIPTION PLANS
-  // =========================================================
   const fetchSubscriptionPlans = () => {
     return new Promise((resolve) => {
+      setLoadingSubscriptions(true);
       userApi.subscriptions.getAll({
-        params: { semester: user?.semester },
+        params: { semester: resolveSemester() },
         showMsg: false,
         onSuccess: (res) => {
           let plans = [];
           if (Array.isArray(res?.data)) plans = res.data;
           else if (Array.isArray(res?.data?.data)) plans = res.data.data;
           else if (Array.isArray(res)) plans = res;
-
           setSubscriptions(plans);
+          setLoadingSubscriptions(false);
           resolve(plans);
         },
         onError: (err) => {
           console.error('Failed to fetch subscription plans:', err);
           setSubscriptions([]);
+          setLoadingSubscriptions(false);
           resolve([]);
         },
       });
     });
   };
 
-  // =========================================================
-  // FETCH COUPONS
-  // =========================================================
   const fetchCoupons = () => {
     userApi.subscriptions.coupons.getAll({
-      onSuccess: (res) => {
-        setAllCoupons(res?.data || []);
-      },
+      onSuccess: (res) => setAllCoupons(res?.data || []),
       onError: (err) => {
         console.log('Failed to fetch coupons:', err);
         setAllCoupons([]);
@@ -212,9 +326,6 @@ const SettingPage1 = () => {
     });
   };
 
-  // =========================================================
-  // INITIAL SUBSCRIPTION LOAD
-  // =========================================================
   useEffect(() => {
     if (!user?._id) return;
     fetchSubScription();
@@ -223,9 +334,6 @@ const SettingPage1 = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?._id, user?.semester]);
 
-  // =========================================================
-  // REFRESH SUBSCRIPTION DATA
-  // =========================================================
   const refreshSubscriptionData = async () => {
     try {
       await Promise.all([fetchSubScription(), fetchSubscriptionPlans()]);
@@ -234,29 +342,9 @@ const SettingPage1 = () => {
     }
   };
 
-  // =========================================================
-  // PROFILE SAVE / LOGOUT / DELETE
-  // =========================================================
-  const handleSave = () => {
-    userApi.settingPage.updateProfile({
-      onSuccess: (res) => {
-        console.log('Profile updated successfully:', res);
-      },
-      onError: (err) => {
-        console.error('Failed to update profile:', err);
-      },
-    });
-  };
-
   const handleLogout = () => {
     clearSubscriptionCache();
     logout();
-    navigate('/');
-  };
-
-  const handleDeleteAccount = () => {
-    clearSubscriptionCache();
-    console.log('Account deleted');
     navigate('/');
   };
 
@@ -264,7 +352,12 @@ const SettingPage1 = () => {
   // RESPONSIVE TABS
   // =========================================================
   const [isLg, setIsLg] = useState(false);
-  const allTabs = ['Profile', 'Subscriptions', 'Transactions', 'My Weekly Timeline'];
+  const allTabs = [
+    'Profile',
+    'Subscriptions',
+    'Transactions',
+    'My Weekly Timeline',
+  ];
 
   useEffect(() => {
     const checkScreen = () => setIsLg(window.innerWidth >= 1024);
@@ -278,14 +371,12 @@ const SettingPage1 = () => {
     : allTabs;
 
   useEffect(() => {
-    if (!tabs.includes(activeTab)) {
-      setActiveTab('Profile');
-    }
+    if (!tabs.includes(activeTab)) setActiveTab('Profile');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tabs, activeTab]);
 
   // =========================================================
-  // HANDLE SUBSCRIPTION (Free + Paid)
+  // HANDLE SUBSCRIBE — free + paid (Razorpay)
   // =========================================================
   const handleSubscribe = (sub) => {
     if (!sub?._id) {
@@ -293,8 +384,8 @@ const SettingPage1 = () => {
       return;
     }
 
-    if (loadingPlanId) return;
-
+    if (subscribeLockRef.current || loadingPlanId) return;
+    subscribeLockRef.current = true;
     setLoadingPlanId(sub._id);
 
     const originalPrice = Number(sub?.originalPrice || 0);
@@ -303,6 +394,12 @@ const SettingPage1 = () => {
     const finalPlanPrice = Number.isFinite(planPrice) ? planPrice : 0;
     const isFree = finalPlanPrice <= 0;
 
+    const releaseLock = () => {
+      subscribeLockRef.current = false;
+      setLoadingPlanId(null);
+    };
+
+    // ---------- STEP 1: Create subscription on backend ----------
     userApi.subscriptions.create({
       showMsg: false,
       data: {
@@ -318,7 +415,7 @@ const SettingPage1 = () => {
         const subscriptionId = subscriptionData?._id;
 
         if (!subscriptionId) {
-          setLoadingPlanId(null);
+          releaseLock();
           showNotification({
             type: 'error',
             message: 'Subscription could not be created',
@@ -326,14 +423,14 @@ const SettingPage1 = () => {
           return;
         }
 
-        const amount = Number(
+        const amountToPay = Number(
           subscriptionData?.finalPrice ?? finalPlanPrice
         );
 
         // =====================================================
-        // FREE / ZERO PRICE PLAN → NO RAZORPAY
+        // FREE PATH
         // =====================================================
-        if (amount <= 0) {
+        if (amountToPay <= 0) {
           const optimistic = {
             ...subscriptionData,
             isActive: true,
@@ -364,7 +461,7 @@ const SettingPage1 = () => {
               saveSubscriptionCache(finalSub);
 
               setModalVisible(false);
-              setLoadingPlanId(null);
+              releaseLock();
 
               showNotification({
                 type: 'success',
@@ -375,24 +472,17 @@ const SettingPage1 = () => {
             },
             onError: async (error) => {
               console.error('Free subscription update failed:', error);
-
               const latest = await fetchSubScription();
               if (latest?.isActive) {
                 setSubscriptionStatus(true);
                 setUser((prev) => ({ ...prev, isSubscribed: true }));
-                setModalVisible(false);
-                showNotification({
-                  type: 'success',
-                  message: 'Subscription activated successfully',
-                });
-              } else {
-                showNotification({
-                  type: 'success',
-                  message: 'Subscription activated successfully',
-                });
-                setModalVisible(false);
               }
-              setLoadingPlanId(null);
+              setModalVisible(false);
+              releaseLock();
+              showNotification({
+                type: 'success',
+                message: 'Subscription activated successfully',
+              });
             },
           });
 
@@ -400,103 +490,162 @@ const SettingPage1 = () => {
         }
 
         // =====================================================
-        // PAID PLAN → RAZORPAY
+        // PAID PATH — Razorpay (no order_id)
         // =====================================================
-        triggerRazorpay({
-          amount,
-          name: user?.fullName || 'User',
-          email: user?.email || 'email@example.com',
-          contact: user?.mobileNumber || '0000000000',
+        loadRazorpayScript()
+          .then(() => {
+            const razorpayKey = process.env.REACT_APP_RAZORPAY_KEY_ID;
 
-          onSuccess: (paymentRes) => {
-            const transactionId =
-              paymentRes?.payload?.payment?.id ||
-              paymentRes?.razorpay_payment_id;
-
-            if (!transactionId) {
-              setLoadingPlanId(null);
+            if (!razorpayKey) {
+              releaseLock();
               showNotification({
                 type: 'error',
-                message: 'Payment ID was not received',
+                message:
+                  'Payment is not configured. Please contact support@semprep.com.',
               });
               return;
             }
 
-            userApi.subscriptions.update({
-              id: subscriptionId,
-              showMsg: false,
-              data: {
-                paymentMode: 'upi',
-                paymentStatus: 'completed',
-                transactionId,
+            const options = {
+              key: razorpayKey,
+              amount: Math.round(amountToPay * 100),
+              currency: 'INR',
+              // ❌ NO order_id — backend doesn't create Razorpay orders.
+              name: 'Semprep',
+              description: 'Semester Subscription',
+              prefill: {
+                name: user?.fullName || user?.name || '',
+                email: user?.email || '',
+                contact: user?.mobileNumber || '',
               },
-              onSuccess: async (updateResponse) => {
-                const updated = updateResponse?.data;
+              theme: { color: '#3DD455' },
 
-                if (
-                  updated?.paymentStatus === 'completed' ||
-                  updated?.isActive === true
-                ) {
-                  const finalSub = { ...updated, isActive: true };
+              handler: function (paymentResponse) {
+                const methodMap = {
+                  card: 'card',
+                  upi: 'upi',
+                  netbanking: 'netbanking',
+                  wallet: 'wallet',
+                  emi: 'emi',
+                  paylater: 'paylater',
+                };
+                const paymentMode =
+                  methodMap[paymentResponse.method] || 'card';
 
-                  setSubscriptionStatus(true);
-                  setCurrentSubscription(finalSub);
-                  setUser((prev) => ({ ...prev, isSubscribed: true }));
-                  saveSubscriptionCache(finalSub);
+                userApi.subscriptions.update({
+                  id: subscriptionId,
+                  showMsg: false,
+                  data: {
+                    paymentMode,
+                    paymentStatus: 'completed',
+                    transactionId: paymentResponse.razorpay_payment_id,
+                  },
+                  onSuccess: async (updateResponse) => {
+                    const updated = updateResponse?.data;
 
-                  setModalVisible(false);
-                  setLoadingPlanId(null);
+                    if (
+                      updated?.paymentStatus === 'completed' ||
+                      updated?.isActive === true
+                    ) {
+                      const finalSub = { ...updated, isActive: true };
+                      setSubscriptionStatus(true);
+                      setCurrentSubscription(finalSub);
+                      setUser((prev) => ({ ...prev, isSubscribed: true }));
+                      saveSubscriptionCache(finalSub);
 
-                  showNotification({
-                    type: 'success',
-                    message:
-                      'Payment successful and subscription activated',
-                  });
+                      setModalVisible(false);
+                      releaseLock();
 
-                  await refreshSubscriptionData();
-                } else {
-                  setLoadingPlanId(null);
-                  showNotification({
-                    type: 'error',
-                    message:
-                      'Payment was successful, but subscription activation failed',
-                  });
-                }
-              },
-              onError: (error) => {
-                console.error(
-                  'Subscription payment confirmation failed:',
-                  error
-                );
-                setLoadingPlanId(null);
-                showNotification({
-                  type: 'error',
-                  message:
-                    'Payment was successful, but subscription activation failed. Please contact support.',
+                      showNotification({
+                        type: 'success',
+                        message:
+                          'Payment successful and subscription activated',
+                      });
+
+                      await refreshSubscriptionData();
+                    } else {
+                      const latest = await fetchSubScription();
+                      releaseLock();
+                      if (latest?.isActive) {
+                        setModalVisible(false);
+                        showNotification({
+                          type: 'success',
+                          message: 'Subscription activated successfully',
+                        });
+                        await refreshSubscriptionData();
+                      } else {
+                        showNotification({
+                          type: 'error',
+                          message:
+                            'Payment succeeded but activation failed. Please contact support@semprep.com.',
+                        });
+                      }
+                    }
+                  },
+                  onError: async (error) => {
+                    // ⚠️ 500 here does NOT mean the payment failed.
+                    console.error('Subscription update failed:', error);
+                    const latest = await fetchSubScription();
+                    releaseLock();
+
+                    if (latest?.isActive) {
+                      setModalVisible(false);
+                      showNotification({
+                        type: 'success',
+                        message:
+                          'Payment successful and subscription activated',
+                      });
+                      refreshSubscriptionData();
+                    } else {
+                      showNotification({
+                        type: 'error',
+                        message:
+                          'Payment succeeded but activation could not be confirmed. Contact support@semprep.com with your payment ID if not active within 5 minutes.',
+                      });
+                    }
+                  },
                 });
               },
-            });
-          },
 
-          onFailure: (error) => {
-            console.error('Razorpay payment failed:', error);
-            setLoadingPlanId(null);
+              modal: {
+                ondismiss: function () {
+                  releaseLock();
+                  showNotification({
+                    type: 'error',
+                    message: 'Payment cancelled',
+                  });
+                },
+              },
+            };
+
+            const rzp = new window.Razorpay(options);
+
+            rzp.on('payment.failed', function (response) {
+              releaseLock();
+              showNotification({
+                type: 'error',
+                message:
+                  response?.error?.description ||
+                  response?.error?.reason ||
+                  'Payment failed.',
+              });
+            });
+
+            rzp.open();
+          })
+          .catch(() => {
+            releaseLock();
             showNotification({
               type: 'error',
-              message: error?.message || 'Payment failed. Please try again.',
+              message:
+                'Could not load payment gateway. Please check your connection and try again.',
             });
-          },
-
-          onCancel: () => {
-            setLoadingPlanId(null);
-            showNotification({ type: 'error', message: 'Payment cancelled' });
-          },
-        });
+          });
       },
 
       onError: (error) => {
         console.error('Subscription creation failed:', error);
-        setLoadingPlanId(null);
+        releaseLock();
         showNotification({
           type: 'error',
           message: error?.message || 'Unable to create subscription',
@@ -506,183 +655,12 @@ const SettingPage1 = () => {
   };
 
   // =========================================================
-  // LOAD RAZORPAY SCRIPT (once, global)
-  // =========================================================
-  useEffect(() => {
-    if (document.querySelector('script[data-razorpay-checkout="true"]')) {
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.async = true;
-    script.dataset.razorpayCheckout = 'true';
-    document.body.appendChild(script);
-  }, []);
-
-  // =========================================================
-  // TRIGGER RAZORPAY
-  // =========================================================
-  const triggerRazorpay = async ({
-    amount,
-    name,
-    email,
-    contact,
-    onSuccess,
-    onFailure,
-    onCancel,
-  }) => {
-    try {
-      if (!window.Razorpay) {
-        await new Promise((resolve, reject) => {
-          const existingScript = document.querySelector(
-            'script[data-razorpay-checkout="true"]'
-          );
-
-          if (existingScript) {
-            existingScript.addEventListener('load', resolve, { once: true });
-            existingScript.addEventListener(
-              'error',
-              () => reject(new Error('Razorpay checkout failed to load')),
-              { once: true }
-            );
-            return;
-          }
-
-          const script = document.createElement('script');
-          script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-          script.async = true;
-          script.dataset.razorpayCheckout = 'true';
-          script.onload = resolve;
-          script.onerror = () =>
-            reject(new Error('Razorpay checkout failed to load'));
-          document.body.appendChild(script);
-        });
-      }
-
-      if (!window.Razorpay) {
-        throw new Error(
-          'Razorpay checkout is not loaded. Please try again.'
-        );
-      }
-
-      const orderResponse = await fetch(
-        `https://api.semprep.com/api/create-order`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            amount: Math.max(100, Math.round(Number(amount) * 100)),
-            currency: 'INR',
-            receipt: `receipt_${Date.now()}`,
-          }),
-        }
-      );
-
-      const orderData = await orderResponse.json();
-
-      if (!orderResponse.ok) {
-        throw new Error(orderData?.message || 'Failed to create order');
-      }
-
-      const options = {
-        key: process.env.REACT_APP_RAZORPAY_KEY_ID,
-        amount: orderData?.data?.amount,
-        currency: orderData?.data?.currency || 'INR',
-        order_id: orderData?.data?.order_id,
-        name: 'Semprep',
-        description: 'Semester Subscription',
-        prefill: { name, email, contact },
-        theme: { color: '#3DD455' },
-
-        handler: async function (response) {
-          try {
-            const verifyResponse = await fetch(
-              `https://api.semprep.com/api/verify-payment`,
-              {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_order_id: response.razorpay_order_id,
-                  razorpay_signature: response.razorpay_signature,
-                }),
-              }
-            );
-
-            const verifyData = await verifyResponse.json();
-
-            if (verifyResponse.ok && verifyData?.success) {
-              onSuccess?.({
-                payload: {
-                  payment: { id: response.razorpay_payment_id },
-                },
-              });
-            } else {
-              throw new Error(
-                verifyData?.message || 'Payment verification failed'
-              );
-            }
-          } catch (error) {
-            console.error('Payment verification error:', error);
-            showNotification({
-              type: 'error',
-              message: error?.message || 'Verification failed',
-            });
-            onFailure?.(error);
-          }
-        },
-
-        modal: {
-          ondismiss: function () {
-            showNotification({
-              type: 'error',
-              message: 'Payment cancelled',
-            });
-            onCancel?.();
-          },
-        },
-      };
-
-      const razorpay = new window.Razorpay(options);
-
-      razorpay.on('payment.failed', function (response) {
-        showNotification({
-          type: 'error',
-          message: response?.error?.description || 'Payment failed',
-        });
-        onFailure?.(response);
-      });
-
-      razorpay.open();
-    } catch (error) {
-      console.error('Razorpay error:', error);
-      showNotification({
-        type: 'error',
-        message: error?.message || 'Something went wrong',
-      });
-      onFailure?.(error);
-    }
-  };
-
-  // =========================================================
   // HELPERS
   // =========================================================
-  const getInitials = (name = '') => {
-    return name
-      .split(' ')
-      .filter(Boolean)
-      .map((word) => word[0])
-      .slice(0, 2)
-      .join('')
-      .toUpperCase();
-  };
-
   const isCurrentPlan = (sub) => {
     if (!currentSubscription) return false;
     const planRef = currentSubscription?.subscriptionPlanId;
-    const currentPlanId =
-      typeof planRef === 'object' ? planRef?._id : planRef;
+    const currentPlanId = typeof planRef === 'object' ? planRef?._id : planRef;
     return currentPlanId && String(currentPlanId) === String(sub?._id);
   };
 
@@ -695,12 +673,17 @@ const SettingPage1 = () => {
     }
   };
 
+  const openSubscriptionModal = () => {
+    fetchSubscriptionPlans();
+    fetchSubScription();
+    setModalVisible(true);
+  };
+
   // =========================================================
   // RENDER
   // =========================================================
   return (
     <div className="">
-      {/* SUBSCRIPTION MODAL */}
       <ReusableModal
         size="md"
         show={modalVisible}
@@ -709,10 +692,14 @@ const SettingPage1 = () => {
         header={false}
         body={
           <div className="p-6">
-            <h2 className="text-xl font-bold mb-4">Subscribe to Continue</h2>
-            <p className="mb-4">
-              Please choose a subscription plan to access this feature.
-            </p>
+            <div className="mb-6 text-center">
+              <h2 className="text-xl font-bold text-gray-900">
+                Choose Your Plan
+              </h2>
+              <p className="mt-2 text-sm text-gray-500">
+                Select a subscription plan to continue.
+              </p>
+            </div>
 
             {isSubscribed && currentSubscription && (
               <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-center">
@@ -732,84 +719,139 @@ const SettingPage1 = () => {
               </div>
             )}
 
-            <div className="space-y-4">
-              {subscriptions?.map((sub) => {
-                const originalPrice = Number(sub?.originalPrice || 0);
-                const discountPrice = Number(
-                  sub?.discountPrice ?? originalPrice
-                );
-                const finalPrice = sub?.discountActive
-                  ? discountPrice
-                  : originalPrice;
-                const currentPlan = isCurrentPlan(sub);
+            {loadingSubscriptions ? (
+              <div className="flex flex-col items-center justify-center py-10">
+                <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-[#3DD455]" />
+                <p className="text-sm text-gray-500">
+                  Loading subscription plans...
+                </p>
+              </div>
+            ) : subscriptions?.length > 0 ? (
+              <div className="space-y-4">
+                {subscriptions.map((sub) => {
+                  const originalPrice = Number(sub?.originalPrice || 0);
+                  const discountPrice = Number(
+                    sub?.discountPrice ?? originalPrice
+                  );
+                  const finalPrice = sub?.discountActive
+                    ? discountPrice
+                    : originalPrice;
+                  const currentPlan = isCurrentPlan(sub);
 
-                return (
-                  <div
-                    key={sub._id}
-                    className={`p-4 border rounded-lg ${
-                      currentPlan
-                        ? 'border-[#3DD455] bg-green-50'
-                        : 'border-gray-200'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <h3 className="font-medium">{sub.name}</h3>
-                        <p className="text-sm text-gray-600">{sub.desc}</p>
-                      </div>
-                      {currentPlan && (
-                        <span className="whitespace-nowrap rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
-                          Current Plan
-                        </span>
-                      )}
-                    </div>
+                  return (
+                    <div
+                      key={sub._id}
+                      className={`rounded-xl border p-4 transition-all ${
+                        currentPlan
+                          ? 'border-[#3DD455] bg-green-50'
+                          : 'border-gray-200 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <h3 className="font-semibold text-gray-900">
+                            {sub?.name || 'Subscription Plan'}
+                          </h3>
+                          {sub?.desc && (
+                            <p className="mt-1 text-sm text-gray-500">
+                              {sub.desc}
+                            </p>
+                          )}
+                        </div>
 
-                    <p className="text-lg font-bold mt-2">
-                      ₹{finalPrice}
-                      {sub.discountActive &&
-                        originalPrice !== finalPrice && (
-                          <span className="ml-2 text-sm line-through text-gray-400">
-                            ₹{originalPrice}
+                        {currentPlan && (
+                          <span className="whitespace-nowrap rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+                            Current Plan
                           </span>
                         )}
-                    </p>
+                      </div>
 
-                    {allCoupons?.length > 0 && !currentPlan && (
-                      <select
-                        className="mt-2 w-full p-2 border rounded"
-                        value={selectedCoupons}
-                        onChange={(e) => setSelectedCoupons(e.target.value)}
+                      <div className="mt-3 flex items-center gap-2">
+                        <span className="text-xl font-bold text-gray-900">
+                          ₹{finalPrice}
+                        </span>
+
+                        {sub?.discountActive &&
+                          originalPrice !== finalPrice && (
+                            <span className="text-sm text-gray-400 line-through">
+                              ₹{originalPrice}
+                            </span>
+                          )}
+
+                        {sub?.discountActive && Number(sub?.discount) > 0 && (
+                          <span className="rounded bg-green-100 px-2 py-1 text-xs font-semibold text-green-700">
+                            {sub.discount}% OFF
+                          </span>
+                        )}
+                      </div>
+
+                      {sub?.duration && (
+                        <p className="mt-2 text-xs text-gray-500">
+                          Duration: {sub.duration}{' '}
+                          {Number(sub.duration) === 1 ? 'month' : 'days'}
+                        </p>
+                      )}
+
+                      {allCoupons?.length > 0 && !currentPlan && (
+                        <select
+                          className="mt-3 w-full rounded border border-gray-300 p-2 text-sm"
+                          value={selectedCoupons}
+                          onChange={(e) => setSelectedCoupons(e.target.value)}
+                        >
+                          <option value="">Select Coupon (Optional)</option>
+                          {allCoupons.map((coupon) => (
+                            <option key={coupon._id} value={coupon.code}>
+                              {coupon.code} - {coupon.discount}% off
+                            </option>
+                          ))}
+                        </select>
+                      )}
+
+                      <button
+                        type="button"
+                        className={`mt-3 w-full rounded-lg px-4 py-2 font-semibold text-white transition ${
+                          currentPlan
+                            ? 'cursor-not-allowed bg-gray-400'
+                            : 'bg-[#3DD455] hover:bg-black'
+                        } disabled:opacity-50`}
+                        onClick={() => handleSubscribe(sub)}
+                        disabled={currentPlan || loadingPlanId !== null}
                       >
-                        <option value="">Select Coupon (Optional)</option>
-                        {allCoupons.map((coupon) => (
-                          <option key={coupon._id} value={coupon.code}>
-                            {coupon.code} - {coupon.discount}% off
-                          </option>
-                        ))}
-                      </select>
-                    )}
-
-                    <button
-                      className={`mt-2 px-4 py-2 font-semibold rounded-lg ${
-                        currentPlan
-                          ? 'bg-gray-400 text-white cursor-not-allowed'
-                          : 'bg-[#3DD455] text-[#fff] hover:bg-[#000]'
-                      } disabled:opacity-50`}
-                      onClick={() => handleSubscribe(sub)}
-                      disabled={currentPlan || loadingPlanId !== null}
-                    >
-                      {loadingPlanId === sub._id
-                        ? 'Processing...'
-                        : currentPlan
-                        ? '✓ Current Plan'
-                        : finalPrice <= 0
-                        ? 'Activate Free'
-                        : 'Subscribe'}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
+                        {loadingPlanId === sub._id ? (
+                          <span className="flex items-center justify-center gap-2">
+                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                            Processing...
+                          </span>
+                        ) : currentPlan ? (
+                          '✓ Current Plan'
+                        ) : finalPrice <= 0 ? (
+                          'Activate Free'
+                        ) : (
+                          `Subscribe ₹${finalPrice}`
+                        )}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="py-10 text-center">
+                <div className="mb-3 text-4xl">📋</div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  No Subscription Plans Found
+                </h3>
+                <p className="mt-2 text-sm text-gray-500">
+                  No active subscription plans are currently available.
+                </p>
+                <button
+                  type="button"
+                  className="mt-4 rounded-lg bg-[#3DD455] px-5 py-2 text-sm font-semibold text-white hover:bg-black"
+                  onClick={() => fetchSubscriptionPlans()}
+                >
+                  Try Again
+                </button>
+              </div>
+            )}
           </div>
         }
       />
@@ -862,14 +904,14 @@ const SettingPage1 = () => {
                         />
                       ) : (
                         <div className="w-[100px] h-[100px] rounded-full bg-gray-200 flex items-center justify-center text-2xl font-semibold text-gray-700">
-                          {getInitials(user?.fullName)}
+                          {initials}
                         </div>
                       )}
                     </div>
 
                     <div className="text-center">
                       <h2 className="text-lg font-bold text-gray-900 capitalize">
-                        {user?.fullName || ''}
+                        {displayName}
                       </h2>
                       <p className="text-sm text-gray-500">
                         Continue Your Journey And Achieve Your Target
@@ -903,7 +945,7 @@ const SettingPage1 = () => {
                         </p>
                         <button
                           className="bg-[#3DD455] hover:bg-black text-white font-bold px-4 py-2 rounded-lg"
-                          onClick={() => setModalVisible(true)}
+                          onClick={openSubscriptionModal}
                         >
                           Subscribe
                         </button>
@@ -949,7 +991,7 @@ const SettingPage1 = () => {
                               message: 'Copied to clipboard',
                             });
                             navigator.clipboard.writeText(
-                              user?.refferalCode
+                              user?.refferalCode || ''
                             );
                           }}
                           className="p-1 hover:bg-gray-200 rounded-md transition"
@@ -967,7 +1009,9 @@ const SettingPage1 = () => {
                           type: 'success',
                           message: 'Copied to clipboard',
                         });
-                        navigator.clipboard.writeText(user?.refferalCode);
+                        navigator.clipboard.writeText(
+                          user?.refferalCode || ''
+                        );
                       }}
                     >
                       Referral & Earn
@@ -1062,9 +1106,7 @@ const SettingPage1 = () => {
                           </div>
                           <div>
                             <p className="text-gray-500">Mode</p>
-                            <p className="font-medium">
-                              {item?.paymentMode}
-                            </p>
+                            <p className="font-medium">{item?.paymentMode}</p>
                           </div>
                         </div>
                       </div>
@@ -1165,9 +1207,7 @@ const SettingPage1 = () => {
                               Weekly Time Spent
                             </h3>
                             <p className="mb-2 text-gray-700">
-                              {formatTimeSpentTimeLine(
-                                event.totalTimeSpent
-                              )}
+                              {formatTimeSpentTimeLine(event.totalTimeSpent)}
                             </p>
                             <p className="grid grid-cols-2 gap-2">
                               <div className="flex items-center p-2 bg-white rounded">

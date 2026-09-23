@@ -1,5 +1,5 @@
 import { Icon } from '@iconify/react';
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import TutorialVideoImage from '../../../assets/images/tutorialBanner.jpg';
 import { ReusableModal } from '../../../components/common/ComPrepComponent/ComPrepComponent';
@@ -18,6 +18,87 @@ import {
   clearSubscriptionCache,
 } from '../../../utils/subscriptionCache';
 
+// ============================================================
+// 🔤 NAME HELPERS
+// ============================================================
+const pickFirstNonEmptyString = (...values) => {
+  for (const v of values) {
+    if (typeof v === 'string' && v.trim()) return v.trim();
+  }
+  return '';
+};
+
+const resolveDisplayName = (user) => {
+  if (!user) return 'User';
+  const fromNames = pickFirstNonEmptyString(
+    user.fullName,
+    user.name,
+    user.userName,
+    user.username,
+    user.displayName
+  );
+  if (fromNames) return fromNames;
+
+  if (typeof user.email === 'string' && user.email.includes('@')) {
+    const prefix = user.email.split('@')[0].trim();
+    if (prefix) return prefix;
+  }
+  if (user.mobileNumber) return `User ${user.mobileNumber}`;
+  return 'User';
+};
+
+const resolveInitials = (name) => {
+  if (!name || typeof name !== 'string') return '?';
+  const parts = name.split(/\s+/).filter(Boolean);
+  if (!parts.length) return '?';
+  return (
+    parts
+      .slice(0, 2)
+      .map((w) => (w[0] ? w[0].toUpperCase() : ''))
+      .join('') || '?'
+  );
+};
+
+// ============================================================
+// RAZORPAY SCRIPT LOADER
+// ============================================================
+let razorpayScriptPromise = null;
+
+const loadRazorpayScript = () => {
+  if (window.Razorpay) return Promise.resolve(true);
+  if (razorpayScriptPromise) return razorpayScriptPromise;
+
+  razorpayScriptPromise = new Promise((resolve, reject) => {
+    const existing = document.querySelector(
+      'script[data-razorpay-checkout="true"]'
+    );
+
+    if (existing) {
+      existing.addEventListener('load', () => resolve(true), { once: true });
+      existing.addEventListener(
+        'error',
+        () => reject(new Error('Razorpay checkout failed to load')),
+        { once: true }
+      );
+      if (window.Razorpay) resolve(true);
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.dataset.razorpayCheckout = 'true';
+    script.onload = () => resolve(true);
+    script.onerror = () => {
+      razorpayScriptPromise = null;
+      reject(new Error('Razorpay checkout failed to load'));
+    };
+    document.body.appendChild(script);
+  });
+
+  return razorpayScriptPromise;
+};
+
 const UserHome = (props) => {
   const navigate = useNavigate();
   const { user, setUser } = useContext(AuthContext);
@@ -34,16 +115,15 @@ const UserHome = (props) => {
   const [showBannerModal, setShowBannerModal] = useState(false);
 
   // =========================================================
-  // SUBSCRIPTION STATE — hydrated from cache on first render
+  // SUBSCRIPTION STATE
   // =========================================================
-  const [subscriptionStatus, setSubscriptionStatus] = useState(() => {
-    const cached = getSubscriptionCache();
-    return Boolean(cached?.isActive);
-  });
-  const [currentSubscription, setCurrentSubscription] = useState(() => {
-    const cached = getSubscriptionCache();
-    return cached?.isActive ? cached : null;
-  });
+  const initialCacheRef = useRef(getSubscriptionCache());
+  const [subscriptionStatus, setSubscriptionStatus] = useState(
+    () => Boolean(initialCacheRef.current?.isActive)
+  );
+  const [currentSubscription, setCurrentSubscription] = useState(() =>
+    initialCacheRef.current?.isActive ? initialCacheRef.current : null
+  );
   const [subscriptionLoading, setSubscriptionLoading] = useState(true);
 
   const [subscriptions, setSubscriptions] = useState([]);
@@ -52,39 +132,35 @@ const UserHome = (props) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [loadingPlanId, setLoadingPlanId] = useState(null);
   const [loadingSubscriptions, setLoadingSubscriptions] = useState(false);
-
   const [isReferalButtonVisible, setIsReferalButtonVisible] = useState(false);
 
+  const subscribeLockRef = useRef(false);
+
   // =========================================================
-  // DERIVED VALUES
+  // DERIVED
   // =========================================================
   const isSubscribed = subscriptionStatus || user?.isSubscribed;
+  const displayName = resolveDisplayName(user);
+  const initials = resolveInitials(displayName);
 
-  const displayName =
-    user?.fullName ||
-    user?.name ||
-    user?.email?.split('@')?.[0] ||
-    'User';
-
-  // Stable signature — re-runs effects when user shape changes
   const userSignature = user
-    ? `${user._id || ''}|${user.semester || ''}|${user.semesterId || ''}`
+    ? `${user._id || user.id || ''}|${user.semester || ''}|${
+        user.semesterId || ''
+      }`
     : '';
 
   // =========================================================
-  // RESOLVE SEMESTER (handles object OR string shapes + fallbacks)
+  // RESOLVE SEMESTER
   // =========================================================
   const resolveSemester = (override) => {
     if (override) {
       return typeof override === 'object' ? override?._id : override;
     }
-
     if (user?.semester) {
       return typeof user.semester === 'object'
         ? user.semester?._id
         : user.semester;
     }
-
     if (user?.semesterId) return user.semesterId;
 
     const stored = sessionStorage.getItem('semesterId');
@@ -99,9 +175,8 @@ const UserHome = (props) => {
       }
       if (storedUser?.semesterId) return storedUser.semesterId;
     } catch {
-      // ignore
+      /* ignore */
     }
-
     return undefined;
   };
 
@@ -121,12 +196,10 @@ const UserHome = (props) => {
         search: searchQuery,
         goalId: courseId,
         goalCategoryId: universityId,
-        semesterId: semesterId,
+        semesterId,
       },
       setIsLoading,
-      onSuccess: (res) => {
-        setCourses(res?.data || []);
-      },
+      onSuccess: (res) => setCourses(res?.data || []),
       onError: (err) => {
         setCourses([]);
         console.error('Failed to fetch courses:', err);
@@ -143,12 +216,10 @@ const UserHome = (props) => {
         limit: 999999,
         page: 1,
         search: searchQuery,
-        semester: resolveSemester(),
+        semesterId: resolveSemester(),
       },
       setIsLoading,
-      onSuccess: (res) => {
-        setCoursePercentage(res?.data || []);
-      },
+      onSuccess: (res) => setCoursePercentage(res?.data || []),
       onError: (err) => {
         console.error('Failed to fetch course percentage:', err);
       },
@@ -156,100 +227,36 @@ const UserHome = (props) => {
   };
 
   // =========================================================
-  // FETCH COURSES WHEN USER / SEARCH CHANGES
-  // =========================================================
-  useEffect(() => {
-    if (!userSignature) return;
-    fetchCourses();
-    fetchCoursePercentage();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery, userSignature]);
-
-  // =========================================================
-  // MODAL POPUP FROM PARENT
-  // =========================================================
-  useEffect(() => {
-    const shouldShow = Boolean(props?.showModalPopUp);
-    setModalVisible(shouldShow);
-    if (shouldShow) {
-      fetchSubscriptionPlans();
-      fetchSubScription();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props?.showModalPopUp]);
-
-  // =========================================================
-  // RE-VERIFY SUBSCRIPTION WHEN MODAL OPENS
-  // =========================================================
-  useEffect(() => {
-    if (modalVisible) {
-      fetchSubScription();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modalVisible]);
-
-  // =========================================================
   // FETCH BANNERS
   // =========================================================
-  useEffect(() => {
-    fetchBanners();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userSignature]);
-
-  const fetchBanners = async () => {
-    let params = {};
-    if (user?.firstVideoBanner) {
-      params = { position: 'MID' };
-    } else if (user?.secondVideoBanner) {
-      params = { position: 'BOTTOM' };
-    } else {
-      params = { position: 'TOP' };
-    }
+  const fetchBanners = () => {
+    let params;
+    if (user?.firstVideoBanner) params = { position: 'MID' };
+    else if (user?.secondVideoBanner) params = { position: 'BOTTOM' };
+    else params = { position: 'TOP' };
 
     userApi.landingPage.getTopBanner({
       params,
-      onSuccess: (data) => {
-        setBanners(data?.data || data || []);
-      },
-      onError: () => {
-        setBanners([]);
+      onSuccess: (data) => setBanners(data?.data || data || []),
+      onError: () => setBanners([]),
+    });
+  };
+
+  // =========================================================
+  // FETCH COUPONS
+  // =========================================================
+  const fetchCoupons = () => {
+    userApi.subscriptions.coupons.getAll({
+      onSuccess: (res) => setAllCoupons(res?.data || []),
+      onError: (err) => {
+        console.error('Failed to fetch coupons:', err);
+        setAllCoupons([]);
       },
     });
   };
 
   // =========================================================
-  // UPDATE USER BANNER
-  // =========================================================
-  const updateUserBanner = async () => {
-    userApi.landingPage.updateBannerStatus({
-      data: {
-        goalCategory: user?.goalCategory || '',
-        goal: user?.goal || '',
-        semester: user?.semester || '',
-        firstVideoBanner: true,
-      },
-      onSuccess: () => {
-        setUser((prev) => ({ ...prev, firstVideoBanner: true }));
-        setShowBannerModal(true);
-      },
-      onError: () => {
-        showNotification({
-          type: 'error',
-          message: 'Failed to update banner status',
-        });
-      },
-    });
-  };
-
-  // =========================================================
-  // SEARCH
-  // =========================================================
-  const handleSearchChange = (event) => {
-    setSearchQuery(event.target.value);
-  };
-
-  // =========================================================
-  // FETCH CURRENT SUBSCRIPTION (returns a Promise)
+  // FETCH CURRENT SUBSCRIPTION
   // =========================================================
   const fetchSubScription = (semesterOverride) => {
     const semester = resolveSemester(semesterOverride);
@@ -260,7 +267,6 @@ const UserHome = (props) => {
         showMsg: false,
         onSuccess: (res) => {
           const current = res?.data || null;
-
           if (current?.isActive) {
             setSubscriptionStatus(true);
             setCurrentSubscription(current);
@@ -269,7 +275,6 @@ const UserHome = (props) => {
             resolve(current);
             return;
           }
-
           setSubscriptionStatus(false);
           setCurrentSubscription(null);
           setUser((prev) => ({ ...prev, isSubscribed: false }));
@@ -277,7 +282,7 @@ const UserHome = (props) => {
           resolve(null);
         },
         onError: (err) => {
-          console.error('Failed to fetch subscription:', err);
+          console.warn('Failed to fetch subscription:', err?.message);
           const cached = getSubscriptionCache();
           if (cached?.isActive) {
             setSubscriptionStatus(true);
@@ -293,7 +298,7 @@ const UserHome = (props) => {
   };
 
   // =========================================================
-  // FETCH ALL SUBSCRIPTION PLANS
+  // FETCH ALL PLANS
   // =========================================================
   const fetchSubscriptionPlans = (semesterOverride) => {
     const semester = resolveSemester(semesterOverride);
@@ -325,27 +330,38 @@ const UserHome = (props) => {
   };
 
   // =========================================================
-  // FETCH COUPONS
-  // =========================================================
-  const fetchCoupons = () => {
-    userApi.subscriptions.coupons.getAll({
-      onSuccess: (res) => {
-        setAllCoupons(res?.data || []);
-      },
-      onError: (err) => {
-        console.log('Failed to fetch coupons:', err);
-        setAllCoupons([]);
-      },
-    });
-  };
-
-  // =========================================================
-  // INITIAL SUBSCRIPTION LOAD
-  // Fires on mount + re-fires whenever userSignature changes
+  // EFFECTS
   // =========================================================
   useEffect(() => {
-    let cancelled = false;
+    if (!userSignature) return;
+    fetchCourses();
+    fetchCoursePercentage();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, userSignature]);
 
+  useEffect(() => {
+    if (!userSignature) return;
+    fetchBanners();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userSignature]);
+
+  useEffect(() => {
+    const shouldShow = Boolean(props?.showModalPopUp);
+    setModalVisible(shouldShow);
+    if (shouldShow) {
+      fetchSubscriptionPlans();
+      fetchSubScription();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props?.showModalPopUp]);
+
+  useEffect(() => {
+    if (modalVisible) fetchSubScription();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modalVisible]);
+
+  useEffect(() => {
+    let cancelled = false;
     const load = async () => {
       setSubscriptionLoading(true);
       try {
@@ -358,18 +374,13 @@ const UserHome = (props) => {
         if (!cancelled) setSubscriptionLoading(false);
       }
     };
-
     load();
-
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userSignature]);
 
-  // =========================================================
-  // REFRESH SUBSCRIPTION ON WINDOW FOCUS
-  // =========================================================
   useEffect(() => {
     const onFocus = () => {
       if (userSignature) fetchSubScription();
@@ -379,8 +390,13 @@ const UserHome = (props) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userSignature]);
 
+  // Preload Razorpay SDK
+  useEffect(() => {
+    loadRazorpayScript().catch(() => {});
+  }, []);
+
   // =========================================================
-  // REFRESH SUBSCRIPTION DATA
+  // HELPERS
   // =========================================================
   const refreshSubscriptionData = async () => {
     try {
@@ -390,9 +406,6 @@ const UserHome = (props) => {
     }
   };
 
-  // =========================================================
-  // FETCH COURSE SUBJECTS
-  // =========================================================
   const fetchCourseSubjectsByCourseId = (courseId) => {
     userApi.courses.getById({
       params: {
@@ -419,8 +432,122 @@ const UserHome = (props) => {
     });
   };
 
+  const updateUserBanner = async () => {
+    userApi.landingPage.updateBannerStatus({
+      data: {
+        goalCategory: user?.goalCategory || '',
+        goal: user?.goal || '',
+        semester: resolveSemester() || '',
+        firstVideoBanner: true,
+      },
+      onSuccess: () => {
+        setUser((prev) => ({ ...prev, firstVideoBanner: true }));
+        setShowBannerModal(true);
+      },
+      onError: () => {
+        showNotification({
+          type: 'error',
+          message: 'Failed to update banner status',
+        });
+      },
+    });
+  };
+
+  const handleSearchChange = (event) => setSearchQuery(event.target.value);
+
+  const isCurrentPlan = (sub) => {
+    if (!currentSubscription) return false;
+    const planRef = currentSubscription?.subscriptionPlanId;
+    const currentPlanId =
+      typeof planRef === 'object' ? planRef?._id : planRef;
+    return currentPlanId && String(currentPlanId) === String(sub?._id);
+  };
+
+  const formatDate = (date) => {
+    if (!date) return '';
+    try {
+      return new Date(date).toLocaleDateString('en-IN');
+    } catch {
+      return String(date).slice(0, 10).split('-').reverse().join('-');
+    }
+  };
+
+  const openSubscriptionModal = async () => {
+    fetchSubscriptionPlans();
+    fetchSubScription();
+    setModalVisible(true);
+  };
+
   // =========================================================
-  // HANDLE SUBSCRIPTION (Free + Paid)
+  // OPEN RAZORPAY CHECKOUT (uses order data from backend)
+  // =========================================================
+  const openRazorpayCheckout = ({
+    razorpayOrderId,
+    amount,
+    onSuccess,
+    onFailure,
+    onCancel,
+  }) => {
+    const razorpayKey = process.env.REACT_APP_RAZORPAY_KEY_ID;
+
+    if (!razorpayKey) {
+      showNotification({
+        type: 'error',
+        message:
+          'Payment is not configured. Please contact support@semprep.com.',
+      });
+      onFailure?.(new Error('Razorpay key missing'));
+      return;
+    }
+
+    const options = {
+      key: razorpayKey,
+      amount: Math.round(Number(amount) * 100), // paise
+      currency: 'INR',
+      order_id: razorpayOrderId,
+      name: 'Semprep',
+      description: 'Semester Subscription',
+      prefill: {
+        name: user?.fullName || user?.name || '',
+        email: user?.email || '',
+        contact: user?.mobileNumber || '',
+      },
+      theme: { color: '#3DD455' },
+
+      handler: function (response) {
+        // Payment success → notify caller
+        onSuccess?.({
+          razorpay_payment_id: response.razorpay_payment_id,
+          razorpay_order_id: response.razorpay_order_id,
+          razorpay_signature: response.razorpay_signature,
+        });
+      },
+
+      modal: {
+        ondismiss: function () {
+          onCancel?.();
+        },
+      },
+    };
+
+    const rzp = new window.Razorpay(options);
+
+    rzp.on('payment.failed', function (response) {
+      showNotification({
+        type: 'error',
+        message:
+          response?.error?.description ||
+          response?.error?.reason ||
+          'Payment failed.',
+      });
+      onFailure?.(response);
+    });
+
+    rzp.open();
+  };
+
+  // =========================================================
+  // HANDLE SUBSCRIBE
   // =========================================================
   const handleSubscribe = (sub) => {
     if (!sub?._id) {
@@ -428,8 +555,8 @@ const UserHome = (props) => {
       return;
     }
 
-    if (loadingPlanId) return;
-
+    if (subscribeLockRef.current || loadingPlanId) return;
+    subscribeLockRef.current = true;
     setLoadingPlanId(sub._id);
 
     const originalPrice = Number(sub?.originalPrice || 0);
@@ -438,6 +565,12 @@ const UserHome = (props) => {
     const finalPlanPrice = Number.isFinite(planPrice) ? planPrice : 0;
     const isFree = finalPlanPrice <= 0;
 
+    const releaseLock = () => {
+      subscribeLockRef.current = false;
+      setLoadingPlanId(null);
+    };
+
+    // ---------- STEP 1: Create subscription on backend ----------
     userApi.subscriptions.create({
       showMsg: false,
       data: {
@@ -453,7 +586,7 @@ const UserHome = (props) => {
         const subscriptionId = subscriptionData?._id;
 
         if (!subscriptionId) {
-          setLoadingPlanId(null);
+          releaseLock();
           showNotification({
             type: 'error',
             message: 'Subscription could not be created',
@@ -461,14 +594,21 @@ const UserHome = (props) => {
           return;
         }
 
-        const amount = Number(
+        // Extract order info if backend returned any
+        const razorpayOrderId =
+          subscriptionData?.razorpayOrderId ||
+          subscriptionData?.order_id ||
+          subscriptionData?.orderId ||
+          subscriptionData?.razorpay_order_id;
+
+        const amountToPay = Number(
           subscriptionData?.finalPrice ?? finalPlanPrice
         );
 
         // =====================================================
-        // FREE / ZERO PRICE PLAN → NO RAZORPAY
+        // FREE PATH — no payment needed
         // =====================================================
-        if (amount <= 0) {
+        if (amountToPay <= 0) {
           const optimistic = {
             ...subscriptionData,
             isActive: true,
@@ -499,8 +639,7 @@ const UserHome = (props) => {
               saveSubscriptionCache(finalSub);
 
               setModalVisible(false);
-              setLoadingPlanId(null);
-
+              releaseLock();
               if (props?.handleClose) props.handleClose();
 
               showNotification({
@@ -508,28 +647,21 @@ const UserHome = (props) => {
                 message: 'Subscription activated successfully',
               });
 
-              await refreshSubscriptionData();
+              refreshSubscriptionData();
             },
             onError: async (error) => {
               console.error('Free subscription update failed:', error);
-
               const latest = await fetchSubScription();
               if (latest?.isActive) {
                 setSubscriptionStatus(true);
                 setUser((prev) => ({ ...prev, isSubscribed: true }));
-                setModalVisible(false);
-                showNotification({
-                  type: 'success',
-                  message: 'Subscription activated successfully',
-                });
-              } else {
-                showNotification({
-                  type: 'success',
-                  message: 'Subscription activated successfully',
-                });
-                setModalVisible(false);
               }
-              setLoadingPlanId(null);
+              setModalVisible(false);
+              releaseLock();
+              showNotification({
+                type: 'success',
+                message: 'Subscription activated successfully',
+              });
             },
           });
 
@@ -537,310 +669,99 @@ const UserHome = (props) => {
         }
 
         // =====================================================
-        // PAID PLAN → RAZORPAY
+        // PAID PATH
         // =====================================================
-        triggerRazorpay({
-          amount,
-          name: user?.fullName || user?.name || 'User',
-          email: user?.email || 'email@example.com',
-          contact: user?.mobileNumber || '0000000000',
 
-          onSuccess: (paymentRes) => {
-            const transactionId =
-              paymentRes?.payload?.payment?.id ||
-              paymentRes?.razorpay_payment_id;
+        // If backend returned an order ID → open Razorpay directly
+        if (razorpayOrderId) {
+          console.log('[PAYMENT] Using order from create response:', razorpayOrderId);
 
-            if (!transactionId) {
-              setLoadingPlanId(null);
-              showNotification({
-                type: 'error',
-                message: 'Payment ID was not received',
-              });
-              return;
-            }
+          openRazorpayCheckout({
+            razorpayOrderId,
+            amount: amountToPay,
 
-            userApi.subscriptions.update({
-              id: subscriptionId,
-              showMsg: false,
-              data: {
-                paymentMode: 'upi',
-                paymentStatus: 'completed',
-                transactionId,
-              },
-              onSuccess: async (updateResponse) => {
-                const updated = updateResponse?.data;
+            onSuccess: (paymentResponse) => {
+              userApi.subscriptions.update({
+                id: subscriptionId,
+                showMsg: false,
+                data: {
+                  paymentMode: 'upi',
+                  paymentStatus: 'completed',
+                  transactionId: paymentResponse.razorpay_payment_id,
+                },
+                onSuccess: async (updateResponse) => {
+                  const updated = updateResponse?.data;
 
-                if (
-                  updated?.paymentStatus === 'completed' ||
-                  updated?.isActive === true
-                ) {
-                  const finalSub = { ...updated, isActive: true };
+                  if (
+                    updated?.paymentStatus === 'completed' ||
+                    updated?.isActive === true
+                  ) {
+                    const finalSub = { ...updated, isActive: true };
+                    setSubscriptionStatus(true);
+                    setCurrentSubscription(finalSub);
+                    setUser((prev) => ({ ...prev, isSubscribed: true }));
+                    saveSubscriptionCache(finalSub);
 
-                  setSubscriptionStatus(true);
-                  setCurrentSubscription(finalSub);
-                  setUser((prev) => ({ ...prev, isSubscribed: true }));
-                  saveSubscriptionCache(finalSub);
+                    setModalVisible(false);
+                    releaseLock();
+                    if (props?.handleClose) props.handleClose();
 
-                  setModalVisible(false);
-                  setLoadingPlanId(null);
+                    showNotification({
+                      type: 'success',
+                      message:
+                        'Payment successful and subscription activated',
+                    });
 
-                  if (props?.handleClose) props.handleClose();
-
-                  showNotification({
-                    type: 'success',
-                    message:
-                      'Payment successful and subscription activated',
-                  });
-
-                  await refreshSubscriptionData();
-                } else {
-                  setLoadingPlanId(null);
+                    refreshSubscriptionData();
+                  } else {
+                    releaseLock();
+                    showNotification({
+                      type: 'error',
+                      message:
+                        'Payment succeeded but activation failed. Please contact support.',
+                    });
+                  }
+                },
+                onError: () => {
+                  releaseLock();
                   showNotification({
                     type: 'error',
                     message:
-                      'Payment was successful, but subscription activation failed',
+                      'Payment succeeded but activation failed. Please contact support.',
                   });
-                }
-              },
-              onError: (error) => {
-                console.error(
-                  'Subscription payment confirmation failed:',
-                  error
-                );
-                setLoadingPlanId(null);
-                showNotification({
-                  type: 'error',
-                  message:
-                    'Payment was successful, but subscription activation failed. Please contact support.',
-                });
-              },
-            });
-          },
+                },
+              });
+            },
 
-          onFailure: (error) => {
-            console.error('Razorpay payment failed:', error);
-            setLoadingPlanId(null);
-            showNotification({
-              type: 'error',
-              message: error?.message || 'Payment failed. Please try again.',
-            });
-          },
+            onFailure: () => releaseLock(),
 
-          onCancel: () => {
-            console.log('Razorpay payment cancelled');
-            setLoadingPlanId(null);
-            showNotification({ type: 'error', message: 'Payment cancelled' });
-          },
+            onCancel: () => {
+              releaseLock();
+              showNotification({ type: 'error', message: 'Payment cancelled' });
+            },
+          });
+
+          return;
+        }
+
+        // No order ID → backend doesn't support self-serve paid plans yet
+        releaseLock();
+        showNotification({
+          type: 'error',
+          message:
+            'Online payment is temporarily unavailable. Please contact support@semprep.com to activate your subscription.',
         });
       },
 
       onError: (error) => {
         console.error('Subscription creation failed:', error);
-        setLoadingPlanId(null);
+        releaseLock();
         showNotification({
           type: 'error',
           message: error?.message || 'Unable to create subscription',
         });
       },
     });
-  };
-
-  // =========================================================
-  // LOAD RAZORPAY SCRIPT (once, global)
-  // =========================================================
-  useEffect(() => {
-    if (document.querySelector('script[data-razorpay-checkout="true"]')) {
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.async = true;
-    script.dataset.razorpayCheckout = 'true';
-    document.body.appendChild(script);
-  }, []);
-
-  // =========================================================
-  // TRIGGER RAZORPAY
-  // =========================================================
-  const triggerRazorpay = async ({
-    amount,
-    name,
-    email,
-    contact,
-    onSuccess,
-    onFailure,
-    onCancel,
-  }) => {
-    try {
-      if (!window.Razorpay) {
-        await new Promise((resolve, reject) => {
-          const existingScript = document.querySelector(
-            'script[data-razorpay-checkout="true"]'
-          );
-
-          if (existingScript) {
-            existingScript.addEventListener('load', resolve, { once: true });
-            existingScript.addEventListener(
-              'error',
-              () => reject(new Error('Razorpay checkout failed to load')),
-              { once: true }
-            );
-            return;
-          }
-
-          const script = document.createElement('script');
-          script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-          script.async = true;
-          script.dataset.razorpayCheckout = 'true';
-          script.onload = resolve;
-          script.onerror = () =>
-            reject(new Error('Razorpay checkout failed to load'));
-          document.body.appendChild(script);
-        });
-      }
-
-      if (!window.Razorpay) {
-        throw new Error(
-          'Razorpay checkout is not loaded. Please try again.'
-        );
-      }
-
-      const orderResponse = await fetch(
-        'https://api.semprep.com/api/create-order',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            amount: Math.max(100, Math.round(Number(amount) * 100)),
-            currency: 'INR',
-            receipt: `receipt_${Date.now()}`,
-          }),
-        }
-      );
-
-      const orderData = await orderResponse.json();
-
-      if (!orderResponse.ok) {
-        throw new Error(orderData?.message || 'Failed to create order');
-      }
-
-      const options = {
-        key: process.env.REACT_APP_RAZORPAY_KEY_ID,
-        amount: orderData?.data?.amount,
-        currency: orderData?.data?.currency || 'INR',
-        order_id: orderData?.data?.order_id,
-        name: 'Semprep',
-        description: 'Semester Subscription',
-        prefill: { name, email, contact },
-        theme: { color: '#3DD455' },
-
-        handler: async function (response) {
-          try {
-            const verifyResponse = await fetch(
-              'https://api.semprep.com/api/verify-payment',
-              {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_order_id: response.razorpay_order_id,
-                  razorpay_signature: response.razorpay_signature,
-                }),
-              }
-            );
-
-            const verifyData = await verifyResponse.json();
-
-            if (verifyResponse.ok && verifyData?.success) {
-              onSuccess?.({
-                payload: {
-                  payment: { id: response.razorpay_payment_id },
-                },
-              });
-            } else {
-              throw new Error(
-                verifyData?.message || 'Payment verification failed'
-              );
-            }
-          } catch (error) {
-            console.error('Payment verification error:', error);
-            showNotification({
-              type: 'error',
-              message: error?.message || 'Payment verification failed',
-            });
-            onFailure?.(error);
-          }
-        },
-
-        modal: {
-          ondismiss: function () {
-            console.log('Razorpay modal dismissed');
-            onCancel?.();
-          },
-        },
-      };
-
-      const razorpay = new window.Razorpay(options);
-
-      razorpay.on('payment.failed', function (response) {
-        console.error('Razorpay payment failed:', response);
-        showNotification({
-          type: 'error',
-          message: response?.error?.description || 'Payment failed',
-        });
-        onFailure?.(response);
-      });
-
-      razorpay.open();
-    } catch (error) {
-      console.error('Razorpay error:', error);
-      showNotification({
-        type: 'error',
-        message:
-          error?.message || 'Something went wrong while opening payment',
-      });
-      onFailure?.(error);
-    }
-  };
-
-  // =========================================================
-  // HELPERS
-  // =========================================================
-  const getInitials = (name = '') => {
-    if (!name) return '?';
-    return name
-      .split(' ')
-      .filter(Boolean)
-      .map((word) => word[0])
-      .slice(0, 2)
-      .join('')
-      .toUpperCase();
-  };
-
-  const isCurrentPlan = (sub) => {
-    if (!currentSubscription) return false;
-
-    const planRef = currentSubscription?.subscriptionPlanId;
-    const currentPlanId =
-      typeof planRef === 'object' ? planRef?._id : planRef;
-
-    return currentPlanId && String(currentPlanId) === String(sub?._id);
-  };
-
-  const formatDate = (date) => {
-    if (!date) return '';
-    try {
-      return new Date(date).toLocaleDateString('en-IN');
-    } catch {
-      return String(date).slice(0, 10).split('-').reverse().join('-');
-    }
-  };
-
-  const openSubscriptionModal = async () => {
-    fetchSubscriptionPlans();
-    fetchSubScription();
-    setModalVisible(true);
   };
 
   // =========================================================
@@ -939,11 +860,12 @@ const UserHome = (props) => {
                           ₹{finalPrice}
                         </span>
 
-                        {sub?.discountActive && originalPrice !== finalPrice && (
-                          <span className="text-sm text-gray-400 line-through">
-                            ₹{originalPrice}
-                          </span>
-                        )}
+                        {sub?.discountActive &&
+                          originalPrice !== finalPrice && (
+                            <span className="text-sm text-gray-400 line-through">
+                              ₹{originalPrice}
+                            </span>
+                          )}
 
                         {sub?.discountActive && Number(sub?.discount) > 0 && (
                           <span className="rounded bg-green-100 px-2 py-1 text-xs font-semibold text-green-700">
@@ -1035,7 +957,6 @@ const UserHome = (props) => {
           <div className="flex lg:flex-row flex-col-reverse items-start">
             {/* MAIN CONTENT */}
             <div className="p-4 flex-1 lg:max-w-[70%] w-full">
-              {/* HERO */}
               <div
                 className="relative text-white md:rounded-xl rounded-lg md:p-3 p-2 bg-center bg-no-repeat bg-cover"
                 style={{
@@ -1068,7 +989,6 @@ const UserHome = (props) => {
                 </div>
               </div>
 
-              {/* WRONG CURRICULUM WARNING */}
               {!isSubscribed && (
                 <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 mt-3">
                   <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
@@ -1092,7 +1012,6 @@ const UserHome = (props) => {
                 </div>
               )}
 
-              {/* COURSES */}
               <div className="mt-3">
                 <h3 className="text-xl font-semibold mb-2">Courses</h3>
 
@@ -1120,7 +1039,7 @@ const UserHome = (props) => {
                             src={course?.image}
                             alt={course?.name}
                             loading={idx < 6 ? 'eager' : 'lazy'}
-                            fetchpriority={idx < 3 ? 'high' : 'auto'}
+                            fetchPriority={idx < 3 ? 'high' : 'auto'}
                             decoding="async"
                             width={800}
                             height={450}
@@ -1142,7 +1061,6 @@ const UserHome = (props) => {
                                 width: '100%',
                                 accentColor: '#2563eb',
                                 cursor: 'pointer',
-                                appearance: 'none',
                                 height: '4px',
                                 borderRadius: '8px',
                                 background: '#e5e7eb',
@@ -1182,7 +1100,6 @@ const UserHome = (props) => {
             {/* RIGHT SIDEBAR */}
             <div className="hidden lg:block w-full flex-1 lg:max-w-[30%] bg-white lg:border-l border-[#d0d0d0] p-6 lg:min-h-svh">
               <div className="space-y-6">
-                {/* PROFILE */}
                 <div className="flex flex-col justify-center relative">
                   <p className="flex justify-end absolute right-2 top-2 text-2xl">
                     <Icon
@@ -1201,7 +1118,7 @@ const UserHome = (props) => {
                       />
                     ) : (
                       <div className="w-[100px] h-[100px] rounded-full bg-gray-200 flex items-center justify-center text-2xl font-semibold text-gray-700">
-                        {getInitials(displayName)}
+                        {initials}
                       </div>
                     )}
                   </div>
@@ -1215,7 +1132,6 @@ const UserHome = (props) => {
                     </p>
                   </div>
 
-                  {/* SUBSCRIPTION */}
                   {subscriptionLoading && !isSubscribed ? (
                     <div className="mt-4 flex flex-col items-center justify-center gap-2">
                       <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-200 border-t-[#3DD455]" />
@@ -1267,7 +1183,6 @@ const UserHome = (props) => {
                   )}
                 </div>
 
-                {/* OFFER */}
                 <div className="bg-yellow-100 rounded-lg p-2.5 flex flex-col items-center gap-2">
                   <p className="font-semibold text-[13px] text-center">
                     ■ Limited Time Offer: 50% Off All Courses! ■
@@ -1278,7 +1193,6 @@ const UserHome = (props) => {
                   </p>
                 </div>
 
-                {/* TUTORIAL BANNER */}
                 <div>
                   <img
                     src={TutorialVideoImage || images.userDashboardTopBanner}
@@ -1294,7 +1208,6 @@ const UserHome = (props) => {
                   />
                 </div>
 
-                {/* REFERRAL / HELP / AMBASSADOR */}
                 <div className="flex lg:flex-col flex-wrap gap-2">
                   {isReferalButtonVisible && (
                     <div className="flex items-center justify-between gap-2 bg-gray-100 px-3 py-2 rounded-2xl">
