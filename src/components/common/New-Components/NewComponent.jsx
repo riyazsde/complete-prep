@@ -1109,108 +1109,260 @@ export const QuestionForm2 = ({
   );
 };
 
-export const ProfileEditFormMain = ({ closeModal, nextPage, setUser, seletedStep, onRegister }) => {
+export const ProfileEditFormMain = ({
+  closeModal,
+  nextPage,
+  setUser,
+  seletedStep,
+  onRegister,
+}) => {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm();
-  console.log({ seletedStep });
+
   const { user } = useContext(AuthContext);
 
   const [showPassword, setShowPassword] = useState(false);
   const [step, setStep] = useState(seletedStep || 'login');
   const [loginMethod, setLoginMethod] = useState('phone');
   const [isLoading, setIsLoading] = useState(false);
+
   const [otpSentTo, setOtpSentTo] = useState(null);
   const [otpEmailSentTo, setOtpEmailSentTo] = useState(null);
 
+  // NEW: Store OTP returned by API
+  const [generatedOtp, setGeneratedOtp] = useState('');
+
   const [userId, setUserId] = useState('');
+
   const navigate = useNavigate();
 
+  // =========================================================
+  // MOBILE LOGIN / SEND OTP
+  // =========================================================
   const onSubmitLogin = async data => {
     userApi.auth.login({
-      data: { mobileNumber: data.mobileNumber },
+      data: {
+        mobileNumber: data.mobileNumber,
+      },
+
       setIsLoading,
+
       onSuccess: res => {
-        setUserId(res?.data?.id);
-        res?.data?.universityId && sessionStorage.setItem('universityId', res?.data?.universityId);
-        res?.data?.semesterId && sessionStorage.setItem('semesterId', res?.data?.semesterId);
-        res?.data?.courseId && sessionStorage.setItem('courseId', res?.data?.courseId);
-        showNotification({
-          type: 'success',
-          message: 'OTP sent to your registered mobile number.',
-        });
-         console.log(data,"---login")
+        const responseData = res?.data || {};
+
+        const id = responseData?.id;
+        const otp = responseData?.otp;
+
+        // Save user ID
+        setUserId(id || '');
+
+        // Save curriculum information
+        if (responseData?.universityId) {
+          sessionStorage.setItem(
+            'universityId',
+            responseData.universityId
+          );
+        }
+
+        if (responseData?.semesterId) {
+          sessionStorage.setItem(
+            'semesterId',
+            responseData.semesterId
+          );
+        }
+
+        if (responseData?.courseId) {
+          sessionStorage.setItem(
+            'courseId',
+            responseData.courseId
+          );
+        }
+
+        // Save mobile number
         setOtpSentTo(data.mobileNumber);
-        setOtpEmailSentTo(data.email);
+
+        // Save email if available
+        setOtpEmailSentTo(data.email || null);
+
+        // =====================================================
+        // IMPORTANT:
+        // API response:
+        // {
+        //   data: {
+        //     token: "...",
+        //     id: "...",
+        //     otp: "0360"
+        //   }
+        // }
+        // =====================================================
+
+        if (otp) {
+          // Convert to string so values like "0360" remain unchanged
+          const otpString = String(otp);
+
+          // Store OTP for displaying on screen
+          setGeneratedOtp(otpString);
+
+          // Automatically fill OTP input
+          setValue('otp', otpString);
+
+          showNotification({
+            type: 'success',
+            message: `OTP generated successfully: ${otpString}`,
+          });
+        } else {
+          // API did not return OTP
+          setGeneratedOtp('');
+
+          showNotification({
+            type: 'error',
+            message:
+              'Login successful, but OTP was not returned by the server.',
+          });
+        }
+
+        // Move to OTP screen
         setStep('otp');
       },
+
       onError: e => {
         console.log(e);
+
         showNotification({
           type: 'error',
-          message: e?.response?.data?.message || 'Login failed. Please try again.',
+          message:
+            e?.response?.data?.message ||
+            'Login failed. Please try again.',
         });
       },
     });
   };
 
- 
+  // =========================================================
+  // EMAIL LOGIN
+  // =========================================================
   const onSubmitEmailLogin = async data => {
     userApi.auth.emailLogin({
-      data: { email: data.email },
+      data: {
+        email: data.email,
+      },
+
       setIsLoading,
+
       onSuccess: res => {
-        setUserId(res?.data?.id);
-        showNotification({
-          type: res?.data?.otp ? 'success' : 'error',
-          message: res?.data?.otp ? `Otp is ${res?.data?.otp}` : 'Something went wrong',
-        });
+        const responseData = res?.data || {};
+        const otp = responseData?.otp;
+
+        setUserId(responseData?.id || '');
+
+        if (otp) {
+          const otpString = String(otp);
+
+          setGeneratedOtp(otpString);
+
+          // Automatically fill OTP input
+          setValue('otp', otpString);
+
+          showNotification({
+            type: 'success',
+            message: `OTP generated successfully: ${otpString}`,
+          });
+        } else {
+          setGeneratedOtp('');
+
+          showNotification({
+            type: 'error',
+            message: 'Something went wrong. OTP was not returned.',
+          });
+        }
+
         setOtpSentTo(data.email);
         setOtpEmailSentTo(data.email);
+
         setStep('otp');
       },
-    });
-  };
 
-  const onVerifyOtp = data => {
-    userApi.auth.verifyOtp({
-      data: { id: data.id },
-      setIsLoading,
-      onSuccess: res => {
-        setUserId(res?.data?.id);
+      onError: e => {
+        console.log(e);
+
         showNotification({
-          type: res?.data?.otp ? 'success' : 'error',
-          message: res?.data?.otp ? `Otp is ${res?.data?.otp}` : 'Something went wrong',
+          type: 'error',
+          message:
+            e?.response?.data?.message ||
+            'Email login failed. Please try again.',
         });
-        setOtpSentTo(data.email);
-        setOtpEmailSentTo(data.email);
       },
     });
   };
 
+  // =========================================================
+  // VERIFY OTP
+  // =========================================================
   const onSubmitOtp = data => {
     userApi.auth.verifyOtp({
       id: userId,
-      data: { otp: data.otp },
+
+      data: {
+        otp: data.otp,
+      },
+
       showMsg: true,
+
+      setIsLoading,
+
       onSuccess: res => {
-        localStorage.setItem('authToken', res?.data?.token);
+        const token = res?.data?.token;
+
+        if (!token) {
+          showNotification({
+            type: 'error',
+            message: 'Authentication token was not returned.',
+          });
+
+          return;
+        }
+
+        // Save authentication token
+        localStorage.setItem('authToken', token);
+
         const savedToken = localStorage.getItem('authToken');
 
+        // Get user profile
         if (res?.data?.userId && savedToken) {
           userApi.profile.getUserProfile({
-            onSuccess: data => {
-              setUser(data?.data?.user);
+            onSuccess: profileResponse => {
+              setUser(profileResponse?.data?.user);
+            },
+
+            onError: e => {
+              console.log(e);
             },
           });
         }
-        const universityId = sessionStorage.getItem('universityId');
-        const semesterId = sessionStorage.getItem('semesterId');
-        const courseId = sessionStorage.getItem('courseId');
+
+        // Get stored curriculum information
+        const universityId =
+          sessionStorage.getItem('universityId');
+
+        const semesterId =
+          sessionStorage.getItem('semesterId');
+
+        const courseId =
+          sessionStorage.getItem('courseId');
+
         if (savedToken) {
-          if (courseId && semesterId && universityId) {
+          // ===================================================
+          // Curriculum information exists
+          // ===================================================
+          if (
+            courseId &&
+            semesterId &&
+            universityId
+          ) {
             userApi.profile.update({
               data: {
                 goalCategory: universityId,
@@ -1218,38 +1370,59 @@ export const ProfileEditFormMain = ({ closeModal, nextPage, setUser, seletedStep
                 semester: semesterId,
                 firstHearAboutUs: true,
               },
+
               onSuccess: () => {
                 if (user?.firstHearAboutUs) {
                   navigate('/user/home');
                 } else {
                   navigate('/choose/hear-about-us');
                 }
-                // sessionStorage.removeItem('universityId');
-                // sessionStorage.removeItem('semesterId');
-                // sessionStorage.removeItem('courseId');
               },
+
               onError: e => {
                 console.log(e);
                 navigate(-1);
               },
             });
-          } else {
+          }
+
+          // ===================================================
+          // No curriculum information
+          // ===================================================
+          else {
             if (onRegister) {
               onRegister();
               return;
             }
-            navigate('/choose-curriculum', { state: { nextPage } });
+
+            navigate('/choose-curriculum', {
+              state: {
+                nextPage,
+              },
+            });
           }
         }
-        {
-          savedToken && navigate('/choose-curriculum', { state: { nextPage } });
-        }
+      },
+
+      onError: e => {
+        console.log(e);
+
+        showNotification({
+          type: 'error',
+          message:
+            e?.response?.data?.message ||
+            'Invalid OTP. Please try again.',
+        });
       },
     });
   };
 
+  // =========================================================
+  // REGISTER
+  // =========================================================
   const onSubmitRegister = data => {
     localStorage.clear();
+
     userApi.auth.registerUser({
       data: {
         fullName: data.fullName,
@@ -1259,26 +1432,56 @@ export const ProfileEditFormMain = ({ closeModal, nextPage, setUser, seletedStep
         firstHearAboutUs: true,
         referralCode: data.referralCode,
       },
+
       setIsLoading,
+
       showMsg: true,
+
       onSuccess: res => {
         setOtpSentTo(data.mobileNumber);
         setOtpEmailSentTo(data.email);
+
         setStep('login');
+      },
+
+      onError: e => {
+        console.log(e);
+
+        showNotification({
+          type: 'error',
+          message:
+            e?.response?.data?.message ||
+            'Registration failed. Please try again.',
+        });
       },
     });
   };
 
+  // =========================================================
+  // FORGOT PASSWORD
+  // =========================================================
   const onSubmitForgot = data => {
     setStep('confirmation');
   };
 
+  // =========================================================
+  // RETURN UI
+  // =========================================================
   return (
     <div className="p-4 relative">
+
+      {/* Close Button */}
       <p className="flex justify-end absolute top-3 right-3 bg-gray-200 rounded-full p-1">
-        <Icon onClick={closeModal} icon="material-symbols:close" className="cursor-pointer" />
+        <Icon
+          onClick={closeModal}
+          icon="material-symbols:close"
+          className="cursor-pointer"
+        />
       </p>
+
       <div className="mx-auto w-full">
+
+        {/* Logo */}
         <p className="text-center my-2">
           <img
             onClick={() => navigate('/')}
@@ -1288,49 +1491,79 @@ export const ProfileEditFormMain = ({ closeModal, nextPage, setUser, seletedStep
           />
         </p>
 
+        {/* =================================================
+            LOGIN
+        ================================================= */}
         {step === 'login' && (
           <>
-            <h2 className="text-2xl font-semibold text-center text-[#3DD455] mb-3">Log in</h2>
+            <h2 className="text-2xl font-semibold text-center text-[#3DD455] mb-3">
+              Log in
+            </h2>
 
-            <form className="space-y-4" onSubmit={handleSubmit(onSubmitLogin)}>
+            <form
+              className="space-y-4"
+              onSubmit={handleSubmit(onSubmitLogin)}
+            >
+              {/* Mobile Number */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">Mobile Number</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Mobile Number
+                </label>
+
                 <input
                   type="tel"
                   {...register('mobileNumber', {
                     required: 'Mobile number is required',
+
                     pattern: {
                       value: /^[0-9]{10}$/,
-                      message: 'Enter a valid 10-digit number',
+                      message:
+                        'Enter a valid 10-digit number',
                     },
                   })}
                   className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-400"
                   placeholder="9876543210"
                 />
+
                 {errors.mobileNumber && (
-                  <p className="text-xs italic text-red-500">{errors.mobileNumber.message}</p>
+                  <p className="text-xs italic text-red-500">
+                    {errors.mobileNumber.message}
+                  </p>
                 )}
               </div>
+
+              {/* Hidden Email Login */}
               {false && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Email</label>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Email
+                  </label>
+
                   <input
                     type="email"
                     {...register('email', {
                       required: 'Email is required',
+
                       pattern: {
-                        value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                        message: 'Enter a valid email address',
+                        value:
+                          /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                        message:
+                          'Enter a valid email address',
                       },
                     })}
                     className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-400"
                     placeholder="you@example.com"
                   />
+
                   {errors.email && (
-                    <p className="text-xs italic text-red-500">{errors.email.message}</p>
+                    <p className="text-xs italic text-red-500">
+                      {errors.email.message}
+                    </p>
                   )}
                 </div>
               )}
+
+              {/* Send OTP */}
               <button
                 type="submit"
                 className="w-full bg-[#3DD455] hover:bg-black text-white font-bold px-4 py-2 rounded-lg"
@@ -1339,108 +1572,220 @@ export const ProfileEditFormMain = ({ closeModal, nextPage, setUser, seletedStep
                 {isLoading ? 'Loading...' : 'Send OTP'}
               </button>
             </form>
+
             <p className="text-sm text-center mt-4">
               No account yet?{' '}
-              <button onClick={() => setStep('register')} className="text-blue-500 underline">
+
+              <button
+                type="button"
+                onClick={() => {
+                  setGeneratedOtp('');
+                  setStep('register');
+                }}
+                className="text-blue-500 underline"
+              >
                 Register
               </button>
             </p>
-            {/* <p className="mt-4 text-center">
-              <button onClick={() => setStep('forgot')} className="text-sm text-blue-600 underline">
-                Forgot password?
-              </button>
-            </p> */}
           </>
         )}
 
+        {/* =================================================
+            OTP
+        ================================================= */}
         {step === 'otp' && (
           <>
-            <h2 className="text-xl font-semibold text-center text-black">Enter OTP</h2>
-            <p className="text-sm text-center mb-3">OTP sent to {otpSentTo}</p>
-            <form className="space-y-4" onSubmit={handleSubmit(onSubmitOtp)}>
+            <h2 className="text-xl font-semibold text-center text-black">
+              Enter OTP
+            </h2>
+
+            <p className="text-sm text-center mb-3">
+              OTP sent to {otpSentTo}
+            </p>
+
+            {/* =================================================
+                SHOW OTP FROM API
+            ================================================= */}
+            {generatedOtp && (
+              <div className="mb-4 p-4 bg-green-50 border border-green-300 rounded-lg text-center">
+
+                <p className="text-sm text-gray-600 mb-1">
+                  Your OTP is (this is for testing purposes)
+                </p>
+
+                <p className="text-3xl font-bold tracking-[8px] text-green-600">
+                  {generatedOtp} 
+                </p>
+
+              
+              </div>
+            )}
+
+            {/* OTP Form */}
+            <form
+              className="space-y-4"
+              onSubmit={handleSubmit(onSubmitOtp)}
+            >
               <div>
-                <label className="block text-sm font-medium text-gray-700">OTP</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  OTP
+                </label>
+
                 <input
                   type="text"
+                  inputMode="numeric"
+                  maxLength={4}
+                  autoComplete="one-time-code"
                   {...register('otp', {
                     required: 'OTP is required',
+
                     pattern: {
                       value: /^[0-9]{4}$/,
-                      message: 'Enter a valid 4-digit OTP',
+                      message:
+                        'Enter a valid 4-digit OTP',
                     },
                   })}
-                  className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-400"
+                  className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-400 text-center text-xl tracking-[6px]"
                   placeholder="1234"
                 />
-                {errors.otp && <p className="text-xs italic text-red-500">{errors.otp.message}</p>}
+
+                {errors.otp && (
+                  <p className="text-xs italic text-red-500">
+                    {errors.otp.message}
+                  </p>
+                )}
               </div>
+
+              {/* Verify OTP */}
               <button
                 type="submit"
+                disabled={isLoading}
                 className="w-full bg-[#3DD455] hover:bg-black text-white font-bold px-4 py-2 rounded-lg"
               >
-                Verify OTP
+                {isLoading
+                  ? 'Verifying...'
+                  : 'Verify OTP'}
               </button>
             </form>
+
+            {/* Back to Login */}
+            <button
+              type="button"
+              onClick={() => {
+                setGeneratedOtp('');
+                setValue('otp', '');
+                setStep('login');
+              }}
+              className="w-full mt-3 text-sm text-blue-500 underline"
+            >
+              Back to Login
+            </button>
           </>
         )}
 
+        {/* =================================================
+            REGISTER
+        ================================================= */}
         {step === 'register' && (
           <>
-            <h2 className="text-2xl font-semibold text-center text-[#3DD455]">Register</h2>
+            <h2 className="text-2xl font-semibold text-center text-[#3DD455]">
+              Register
+            </h2>
+
             <p className="text-sm text-center mb-3">
               Already have an account?{' '}
-              <button onClick={() => setStep('login')} className="text-blue-500 underline">
+
+              <button
+                type="button"
+                onClick={() => setStep('login')}
+                className="text-blue-500 underline"
+              >
                 Log in
               </button>
             </p>
-            <form className="space-y-4" onSubmit={handleSubmit(onSubmitRegister)}>
+
+            <form
+              className="space-y-4"
+              onSubmit={handleSubmit(onSubmitRegister)}
+            >
+              {/* Full Name */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">Full Name</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Full Name
+                </label>
+
                 <input
                   type="text"
-                  {...register('fullName', { required: 'Full name is required' })}
+                  {...register('fullName', {
+                    required: 'Full name is required',
+                  })}
                   className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-400"
                   placeholder="John Doe"
                 />
+
                 {errors.fullName && (
-                  <p className="text-xs italic text-red-500">{errors.fullName.message}</p>
+                  <p className="text-xs italic text-red-500">
+                    {errors.fullName.message}
+                  </p>
                 )}
               </div>
+
+              {/* Mobile Number */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">Mobile Number</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Mobile Number
+                </label>
+
                 <input
                   type="tel"
                   {...register('mobileNumber', {
                     required: 'Mobile number is required',
+
                     pattern: {
                       value: /^[0-9]{10}$/,
-                      message: 'Enter a valid 10-digit number',
+                      message:
+                        'Enter a valid 10-digit number',
                     },
                   })}
                   className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-400"
                   placeholder="9876543210"
                 />
+
                 {errors.mobileNumber && (
-                  <p className="text-xs italic text-red-500">{errors.mobileNumber.message}</p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Email</label>
-                <input
-                  type="email"
-                  {...register('email', { required: 'Email is required' })}
-                  className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-400"
-                  placeholder="you@example.com"
-                />
-                {errors.email && (
-                  <p className="text-xs italic text-red-500">{errors.email.message}</p>
+                  <p className="text-xs italic text-red-500">
+                    {errors.mobileNumber.message}
+                  </p>
                 )}
               </div>
 
+              {/* Email */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Email
+                </label>
+
+                <input
+                  type="email"
+                  {...register('email', {
+                    required: 'Email is required',
+                  })}
+                  className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-400"
+                  placeholder="you@example.com"
+                />
+
+                {errors.email && (
+                  <p className="text-xs italic text-red-500">
+                    {errors.email.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Referral Code */}
               <div>
                 <label className="block text-sm font-medium text-gray-700">
                   Referral Code (Optional)
                 </label>
+
                 <input
                   type="text"
                   {...register('referralCode')}
@@ -1448,34 +1793,53 @@ export const ProfileEditFormMain = ({ closeModal, nextPage, setUser, seletedStep
                   placeholder="D8ANEL0LO"
                 />
               </div>
+
+              {/* Register */}
               <button
                 type="submit"
+                disabled={isLoading}
                 className="w-full px-6 py-2 font-bold bg-[#3DD455] hover:bg-black text-white rounded-lg"
               >
-                Register
+                {isLoading ? 'Loading...' : 'Register'}
               </button>
             </form>
           </>
         )}
 
+        {/* =================================================
+            FORGOT PASSWORD
+        ================================================= */}
         {step === 'forgot' && (
           <>
             <h2 className="text-xl font-semibold text-center text-green-600">
               Forgot your password?
             </h2>
-            <form onSubmit={handleSubmit(onSubmitForgot)} className="mt-4 space-y-4">
+
+            <form
+              onSubmit={handleSubmit(onSubmitForgot)}
+              className="mt-4 space-y-4"
+            >
               <div>
-                <label className="block text-sm font-medium text-gray-700">Email</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Email
+                </label>
+
                 <input
                   type="email"
-                  {...register('email', { required: 'Email is required' })}
+                  {...register('email', {
+                    required: 'Email is required',
+                  })}
                   className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-400"
                   placeholder="you@example.com"
                 />
+
                 {errors.email && (
-                  <p className="text-xs italic text-red-500">{errors.email.message}</p>
+                  <p className="text-xs italic text-red-500">
+                    {errors.email.message}
+                  </p>
                 )}
               </div>
+
               <button
                 type="submit"
                 className="w-full py-2 font-semibold text-black transition bg-yellow-300 rounded-md hover:bg-yellow-400"
@@ -1483,6 +1847,7 @@ export const ProfileEditFormMain = ({ closeModal, nextPage, setUser, seletedStep
                 Reset
               </button>
             </form>
+
             <p className="mt-4 text-center">
               <span
                 className="text-sm text-blue-600 underline cursor-pointer"
@@ -1494,12 +1859,19 @@ export const ProfileEditFormMain = ({ closeModal, nextPage, setUser, seletedStep
           </>
         )}
 
+        {/* =================================================
+            CONFIRMATION
+        ================================================= */}
         {step === 'confirmation' && (
           <div className="text-center">
             <h2 className="mt-4 text-xl font-semibold text-green-600">
               We have sent you a message.
             </h2>
-            <p className="text-green-700">Go to the mail</p>
+
+            <p className="text-green-700">
+              Go to the mail
+            </p>
+
             <p className="mt-4">
               <span
                 className="text-sm text-blue-600 underline cursor-pointer"
@@ -1510,6 +1882,7 @@ export const ProfileEditFormMain = ({ closeModal, nextPage, setUser, seletedStep
             </p>
           </div>
         )}
+
       </div>
     </div>
   );
