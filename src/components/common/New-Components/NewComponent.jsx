@@ -1128,109 +1128,110 @@ export const ProfileEditFormMain = ({ closeModal, nextPage, setUser, seletedStep
   const [userId, setUserId] = useState('');
   const navigate = useNavigate();
 
-  // const onSubmitLogin = async data => {
-  //   userApi.auth.login({
-  //     data: { mobileNumber: data.mobileNumber },
-  //     setIsLoading,
-  //     onSuccess: res => {
-  //       setUserId(res?.data?.id);
-  //       res?.data?.universityId && sessionStorage.setItem('universityId', res?.data?.universityId);
-  //       res?.data?.semesterId && sessionStorage.setItem('semesterId', res?.data?.semesterId);
-  //       res?.data?.courseId && sessionStorage.setItem('courseId', res?.data?.courseId);
-  //       showNotification({
-  //         type: 'success',
-  //         message: 'OTP sent to your registered mobile number.',
-  //       });
-
-  //       setOtpSentTo(data.mobileNumber);
-  //       setOtpEmailSentTo(data.email);
-  //       setStep('otp');
-  //     },
-  //     onError: e => {
-  //       console.log(e);
-  //       showNotification({
-  //         type: 'error',
-  //         message: e?.response?.data?.message || 'Login failed. Please try again.',
-  //       });
-  //     },
-  //   });
-  // };
+  const onSubmitLogin = async data => {
+    userApi.auth.login({
+      data: { mobileNumber: data.mobileNumber },
+      setIsLoading,
+      onSuccess: res => {
+        setUserId(res?.data?.id);
+        res?.data?.universityId && sessionStorage.setItem('universityId', res?.data?.universityId);
+        res?.data?.semesterId && sessionStorage.setItem('semesterId', res?.data?.semesterId);
+        res?.data?.courseId && sessionStorage.setItem('courseId', res?.data?.courseId);
+        showNotification({
+          type: 'success',
+          message: 'OTP sent to your registered mobile number.',
+        });
+         console.log(data,"---login")
+        setOtpSentTo(data.mobileNumber);
+        setOtpEmailSentTo(data.email);
+        setStep('otp');
+      },
+      onError: e => {
+        console.log(e);
+        showNotification({
+          type: 'error',
+          message: e?.response?.data?.message || 'Login failed. Please try again.',
+        });
+      },
+    });
+  };
 
   //use below code for testing
 
 
   // --------------------------------------
-  const onSubmitLogin = async data => {
-  userApi.auth.login({
-    data: {
-      mobileNumber: data.mobileNumber,
-    },
-    setIsLoading,
+ 
+//   const onSubmitLogin = async data => {
+//   userApi.auth.login({
+//     data: {
+//       mobileNumber: data.mobileNumber,
+//     },
+//     setIsLoading,
 
-    onSuccess: res => {
-      console.log('LOGIN RESPONSE:', res);
+//     onSuccess: res => {
+//       console.log('LOGIN RESPONSE:', res);
 
-      const token = res?.data?.token;
-      const userId = res?.data?.id;
+//       const token = res?.data?.token;
+//       const userId = res?.data?.id;
 
-      if (!token) {
-        showNotification({
-          type: 'error',
-          message: 'Login successful, but authentication token was not returned.',
-        });
-        return;
-      }
+//       if (!token) {
+//         showNotification({
+//           type: 'error',
+//           message: 'Login successful, but authentication token was not returned.',
+//         });
+//         return;
+//       }
 
-      // Save authentication token
-      localStorage.setItem('authToken', token);
+//       // Save authentication token
+//       localStorage.setItem('authToken', token);
 
-      // Save user-related data
-      if (userId) {
-        localStorage.setItem('userId', userId);
-      }
+//       // Save user-related data
+//       if (userId) {
+//         localStorage.setItem('userId', userId);
+//       }
 
-      if (res?.data?.universityId) {
-        sessionStorage.setItem(
-          'universityId',
-          res.data.universityId
-        );
-      }
+//       if (res?.data?.universityId) {
+//         sessionStorage.setItem(
+//           'universityId',
+//           res.data.universityId
+//         );
+//       }
 
-      if (res?.data?.semesterId) {
-        sessionStorage.setItem(
-          'semesterId',
-          res.data.semesterId
-        );
-      }
+//       if (res?.data?.semesterId) {
+//         sessionStorage.setItem(
+//           'semesterId',
+//           res.data.semesterId
+//         );
+//       }
 
-      if (res?.data?.courseId) {
-        sessionStorage.setItem(
-          'courseId',
-          res.data.courseId
-        );
-      }
+//       if (res?.data?.courseId) {
+//         sessionStorage.setItem(
+//           'courseId',
+//           res.data.courseId
+//         );
+//       }
 
-      showNotification({
-        type: 'success',
-        message: 'Login successful.',
-      });
+//       showNotification({
+//         type: 'success',
+//         message: 'Login successful.',
+//       });
 
-      // Go directly to your application
-      navigate('/user/home');
-    },
+//       // Go directly to your application
+//       navigate('/user/home');
+//     },
 
-    onError: e => {
-      console.error('LOGIN ERROR:', e);
+//     onError: e => {
+//       console.error('LOGIN ERROR:', e);
 
-      showNotification({
-        type: 'error',
-        message:
-          e?.response?.data?.message ||
-          'Login failed. Please try again.',
-      });
-    },
-  });
-};
+//       showNotification({
+//         type: 'error',
+//         message:
+//           e?.response?.data?.message ||
+//           'Login failed. Please try again.',
+//       });
+//     },
+//   });
+// };
   const onSubmitEmailLogin = async data => {
     userApi.auth.emailLogin({
       data: { email: data.email },

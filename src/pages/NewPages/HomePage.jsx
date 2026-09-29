@@ -567,7 +567,7 @@ const HomePage = () => {
         {/* ==========================================
             TOP BANNERS
         ========================================== */}
-        {topBanners?.length > 0 && (
+        {/* {topBanners?.length > 0 && (
           <div className="w-full px-3 sm:px-5 md:px-8 lg:px-10 mt-5 mb-8">
             <div className="w-full max-w-[1400px] mx-auto overflow-hidden rounded-2xl">
 
@@ -591,7 +591,7 @@ const HomePage = () => {
 
             </div>
           </div>
-        )}
+        )} */}
 
         <div>
 
